@@ -37,10 +37,17 @@ const feeRoutes = require('./routes/feeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 
-const uploadFolders = ['exams', 'timetables', 'materials', 'answer-sheets', 'payment-slips', 'notifications'];
-uploadFolders.forEach((folder) => {
-  fs.mkdirSync(path.join(__dirname, 'uploads', folder), { recursive: true });
-});
+// Create upload folders (used in local development; skip in serverless)
+if (process.env.NODE_ENV !== 'production') {
+  const uploadFolders = ['exams', 'timetables', 'materials', 'answer-sheets', 'payment-slips', 'notifications'];
+  uploadFolders.forEach((folder) => {
+    try {
+      fs.mkdirSync(path.join(__dirname, 'uploads', folder), { recursive: true });
+    } catch (err) {
+      console.error(`Failed to create upload folder: ${folder}`, err);
+    }
+  });
+}
 
 // Use Routes
 app.use('/api/auth', authRoutes);
