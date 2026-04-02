@@ -37,17 +37,10 @@ const feeRoutes = require('./routes/feeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 
-// Create upload folders (used in local development; skip in serverless)
-if (process.env.NODE_ENV !== 'production') {
-  const uploadFolders = ['exams', 'timetables', 'materials', 'answer-sheets', 'payment-slips', 'notifications'];
-  uploadFolders.forEach((folder) => {
-    try {
-      fs.mkdirSync(path.join(__dirname, 'uploads', folder), { recursive: true });
-    } catch (err) {
-      console.error(`Failed to create upload folder: ${folder}`, err);
-    }
-  });
-}
+const uploadFolders = ['exams', 'timetables', 'materials', 'answer-sheets', 'payment-slips', 'notifications'];
+uploadFolders.forEach((folder) => {
+  fs.mkdirSync(path.join(__dirname, 'uploads', folder), { recursive: true });
+});
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -69,9 +62,8 @@ app.get('/', (req, res) => {
   res.send('Learn Mate API is running');
 });
 
-const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
+// Only listen if not deployed on Vercel (Render compatibility)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
   app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 }
-
-module.exports = app;
