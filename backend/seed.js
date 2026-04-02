@@ -130,105 +130,170 @@ const seedDatabase = async () => {
     class11.students.push(student3._id);
     await class11.save();
 
-    // 4. Create Timetable Entries
-    const timetables = await Timetable.insertMany([
+    // 4. Create Timetable Entries - Default timetable for all grades
+    // School day: Monday-Friday, 08:30-17:30 (5:30 PM)
+    // Time slots: 08:30-10:30 (2h), 10:45-12:45 (2h), 13:30-15:30 (2h), 15:45-17:30 (1.75h)
+    
+    const classes = [class6, class7, class8, class9, class10, class11];
+    const timetableData = [];
+
+    // Create a rotation of subjects for each grade and day
+    // Subject distribution: Science, Mathematics, ICT, History, Spanish, English
+    const subjectRotation = {
+      'MONDAY': [
+        { subject: subjects[1], title: 'Mathematics', start: '08:30', end: '10:30' },    // 2h
+        { subject: subjects[0], title: 'Science', start: '10:45', end: '12:45' },        // 2h
+        { subject: subjects[5], title: 'English', start: '13:30', end: '15:30' },        // 2h
+        { subject: subjects[3], title: 'History', start: '15:45', end: '17:30' }         // 1h 45m
+      ],
+      'TUESDAY': [
+        { subject: subjects[0], title: 'Science', start: '08:30', end: '10:30' },        // 2h
+        { subject: subjects[2], title: 'ICT', start: '10:45', end: '12:45' },            // 2h
+        { subject: subjects[4], title: 'Spanish', start: '13:30', end: '15:30' },        // 2h
+        { subject: subjects[1], title: 'Mathematics', start: '15:45', end: '17:30' }     // 1h 45m
+      ],
+      'WEDNESDAY': [
+        { subject: subjects[5], title: 'English', start: '08:30', end: '10:30' },        // 2h
+        { subject: subjects[3], title: 'History', start: '10:45', end: '12:45' },        // 2h
+        { subject: subjects[1], title: 'Mathematics', start: '13:30', end: '15:30' },    // 2h
+        { subject: subjects[0], title: 'Science', start: '15:45', end: '17:30' }         // 1h 45m
+      ],
+      'THURSDAY': [
+        { subject: subjects[2], title: 'ICT', start: '08:30', end: '10:30' },            // 2h
+        { subject: subjects[5], title: 'English', start: '10:45', end: '12:45' },        // 2h
+        { subject: subjects[3], title: 'History', start: '13:30', end: '15:30' },        // 2h
+        { subject: subjects[4], title: 'Spanish', start: '15:45', end: '17:30' }         // 1h 45m
+      ],
+      'FRIDAY': [
+        { subject: subjects[4], title: 'Spanish', start: '08:30', end: '10:30' },        // 2h
+        { subject: subjects[1], title: 'Mathematics', start: '10:45', end: '12:45' },    // 2h
+        { subject: subjects[2], title: 'ICT', start: '13:30', end: '15:30' },            // 2h
+        { subject: subjects[0], title: 'Science', start: '15:45', end: '17:30' }         // 1h 45m
+      ]
+    };
+
+    // Generate timetable for each class and day
+    for (const gradeClass of classes) {
+      for (const [day, sessions] of Object.entries(subjectRotation)) {
+        for (const session of sessions) {
+          timetableData.push({
+            schoolClass: gradeClass._id,
+            teacher: teacher._id,
+            subject: session.subject._id,
+            title: `${session.title} ${gradeClass.name}`,
+            description: `${session.title} class for ${gradeClass.name}`,
+            day: day,
+            startTime: session.start,
+            endTime: session.end,
+            room: `Room ${gradeClass.name.split(' ')[1]}-${Math.floor(Math.random() * 9) + 1}`
+          });
+        }
+      }
+    }
+
+    const timetables = await Timetable.insertMany(timetableData);
+    console.log(`${timetables.length} Timetable entries created (default schedule for all grades)`);
+
+    // 5. Create Exams for different classes and subjects
+    const exams = await Exam.insertMany([
+      // Grade 10 exams (student1 and student2's class)
       {
-        schoolClass: class10._id,
+        subject: subjects[1]._id,  // Mathematics
         teacher: teacher._id,
-        subject: subjects[0]._id,
-        title: 'Math Double Period',
-        day: 'MONDAY',
-        startTime: '08:00',
-        endTime: '09:30',
-        room: 'Room 101'
+        schoolClass: class10._id,
+        date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),  // 7 days from now
+        title: 'Mathematics Mid-Term',
+        description: 'Comprehensive mid-term exam covering chapters 1-5',
+        maxMarks: 100,
+        passMark: 40
       },
       {
-        schoolClass: class10._id,
+        subject: subjects[0]._id,  // Science
         teacher: teacher._id,
-        subject: subjects[1]._id,
-        title: 'Physics Practical',
-        day: 'TUESDAY',
-        startTime: '10:00',
-        endTime: '11:00',
-        room: 'Lab 2'
+        schoolClass: class10._id,
+        date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),  // 14 days from now
+        title: 'Science Mid-Term',
+        description: 'Physics, Chemistry, and Biology sections',
+        maxMarks: 100,
+        passMark: 40
       },
       {
+        subject: subjects[2]._id,  // ICT
+        teacher: teacher._id,
+        schoolClass: class10._id,
+        date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),  // 21 days from now
+        title: 'ICT Practical Examination',
+        description: 'Practical exam - Database design and SQL queries',
+        maxMarks: 100,
+        passMark: 40
+      },
+      // Grade 11 exams (student3's class)
+      {
+        subject: subjects[2]._id,  // ICT
+        teacher: teacher._id,
         schoolClass: class11._id,
-        teacher: teacher._id,
-        subject: subjects[2]._id,
-        title: 'ICT Theory',
-        day: 'WEDNESDAY',
-        startTime: '11:30',
-        endTime: '12:30',
-        room: 'Computer Lab'
+        date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+        title: 'ICT Final Exam',
+        description: 'Programming and web development topics',
+        maxMarks: 100,
+        passMark: 40
       },
       {
-        schoolClass: class10._id,
+        subject: subjects[1]._id,  // Mathematics
         teacher: teacher._id,
-        subject: subjects[0]._id,
-        title: 'Math Revision',
-        day: 'THURSDAY',
-        startTime: '13:00',
-        endTime: '14:00',
-        room: 'Room 101'
-      },
-      {
         schoolClass: class11._id,
-        teacher: teacher._id,
-        subject: subjects[2]._id,
-        title: 'ICT Practice',
-        day: 'FRIDAY',
-        startTime: '09:00',
-        endTime: '10:30',
-        room: 'Computer Lab'
+        date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+        title: 'Mathematics Final Exam',
+        description: 'Calculus, Algebra, and Statistics',
+        maxMarks: 100,
+        passMark: 40
       }
     ]);
-    console.log(`${timetables.length} Timetable entries created`);
 
-    // 5. Create an Exam to link Marks to
-    const mathExam = await Exam.create({
-      subject: subjects[0]._id,
-      teacher: teacher._id,
-      schoolClass: class10._id,
-      date: new Date(),
-      title: 'Mid-Term Mathematics',
-      maxMarks: 100,
-      passMark: 40
-    });
+    console.log(`${exams.length} Exams created`);
 
-    const ictExam = await Exam.create({
-      subject: subjects[2]._id,
-      teacher: teacher._id,
-      schoolClass: class11._id,
-      date: new Date(),
-      title: 'Mid-Term ICT',
-      maxMarks: 100,
-      passMark: 40
-    });
-
-    console.log('Exams created');
-
-    // 6. Create Marks
+    // 6. Create Marks for students on their exams
     const marks = await Mark.insertMany([
+      // Marks for student1's exams
       {
         student: student1._id,
-        exam: mathExam._id,
+        exam: exams[0]._id,  // Mathematics Mid-Term (class 10)
         score: 85,
-        remarks: 'Excellent work'
+        published: true,
+        comments: 'Excellent work on algebra section'
+      },
+      {
+        student: student1._id,
+        exam: exams[1]._id,  // Science Mid-Term (class 10)
+        score: 78,
+        published: true,
+        comments: 'Good understanding of concepts'
+      },
+      // Marks for student2's exams
+      {
+        student: student2._id,
+        exam: exams[0]._id,  // Mathematics Mid-Term (class 10)
+        score: 72,
+        published: true,
+        comments: 'Good progress, work on accuracy'
       },
       {
         student: student2._id,
-        exam: mathExam._id,
-        score: 72,
-        remarks: 'Good progress'
+        exam: exams[2]._id,  // ICT Practical (class 10)
+        score: 88,
+        published: true,
+        comments: 'Outstanding coding skills'
       },
+      // Marks for student3's exams
       {
         student: student3._id,
-        exam: ictExam._id,
+        exam: exams[3]._id,  // ICT Final Exam (class 11)
         score: 91,
-        remarks: 'Outstanding performance'
+        published: true,
+        comments: 'Outstanding performance throughout'
       }
     ]);
+
     console.log(`${marks.length} Mark entries created`);
 
     // 7. Create Fee Records
