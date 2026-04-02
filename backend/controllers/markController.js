@@ -1,6 +1,7 @@
 const Mark = require('../models/Mark');
 const Exam = require('../models/Exam');
 const User = require('../models/User');
+const notificationService = require('../services/notificationService');
 
 const MARK_POPULATE = [
   {
@@ -143,6 +144,17 @@ const updateMark = async (req, res) => {
     }
 
     await mark.save();
+
+    // Trigger notification if marks are being published/released
+    if (mark.published && req.body.published === true) {
+      const student = await User.findById(mark.student).populate('subjects');
+      const exam = await Exam.findById(mark.exam).populate('subject');
+      if (student && exam) {
+        await notificationService.createNotificationForMarksReleased(student, {
+          subject: exam.subject,
+        });
+      }
+    }
 
     const hydrated = await hydrateMarks(Mark.findById(mark._id));
     res.json({ message: 'Mark updated successfully.', mark: serializeMark(hydrated) });

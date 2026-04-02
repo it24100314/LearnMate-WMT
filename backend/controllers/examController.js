@@ -205,11 +205,10 @@ const createExam = async (req, res) => {
       filePath: req.file?.filename || null,
     });
 
-    await notificationService.createNotificationForClass({
-      schoolClass,
-      title: 'New Exam Posted',
-      message: `New Exam Alert: An exam for ${subject.name} has been scheduled.`,
-      type: 'SYSTEM',
+    // Automatically trigger notification to all students in the class
+    await notificationService.createNotificationForNewExam({
+      ...exam.toObject(),
+      schoolClass: { _id: schoolClass._id }
     });
 
     const hydrated = await hydrateExams(Exam.findById(exam._id));

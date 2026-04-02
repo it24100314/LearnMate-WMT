@@ -278,6 +278,13 @@ const updateTimetable = async (req, res) => {
     await existing.save();
 
     const updated = await Timetable.findById(existing._id).populate(TIMETABLE_POPULATE);
+    
+    // Automatically trigger notification to all students in the class
+    await notificationService.createNotificationForUpdatedTimetable({
+      ...updated.toObject(),
+      schoolClass: { _id: updated.schoolClass._id }
+    });
+    
     res.json({
       message: 'Lecture updated successfully!',
       timetable: serializeTimetable(updated),

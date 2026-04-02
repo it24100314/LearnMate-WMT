@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'expo-router';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
 
@@ -43,6 +44,7 @@ const asArray = (value: unknown): string[] => {
 };
 
 export default function NotificationsScreen() {
+  const router = useRouter();
   const [role, setRole] = useState('');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,8 +76,11 @@ export default function NotificationsScreen() {
       const userRole = savedRole || '';
       setRole(userRole);
 
-      const listResponse = await api.get('/notifications/list');
-      setNotifications(listResponse.data?.receivedNotifications ?? []);
+      // Use the new filtered endpoint for visible notifications
+      // This ensures students only see their class/global notifications,
+      // teachers only see teacher role notifications, etc.
+      const listResponse = await api.get('/notifications/visible');
+      setNotifications(listResponse.data?.notifications ?? []);
 
       if (userRole === 'TEACHER' || userRole === 'ADMIN') {
         const optionsResponse = await api.get('/notifications/options');
@@ -195,7 +200,15 @@ export default function NotificationsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {canCreate && options ? (
-        <View style={styles.composeCard}>
+        <View>
+          <TouchableOpacity
+            style={[styles.manageButton, { marginBottom: 12 }]}
+            onPress={() => router.push('/manage-notifications')}
+          >
+            <Text style={styles.manageButtonText}>📋 Manage Notifications</Text>
+          </TouchableOpacity>
+
+          <View style={styles.composeCard}>
           <Text style={styles.sectionTitle}>Create Notification</Text>
 
           <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} />
@@ -255,6 +268,7 @@ export default function NotificationsScreen() {
           <TouchableOpacity style={styles.submitButton} onPress={submitNotification} disabled={submitting}>
             <Text style={styles.submitText}>{submitting ? 'Sending...' : 'Send Notification'}</Text>
           </TouchableOpacity>
+          </View>
         </View>
       ) : null}
 
@@ -440,5 +454,17 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     marginTop: 10,
+  },
+  manageButton: {
+    backgroundColor: '#7c3aed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  manageButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

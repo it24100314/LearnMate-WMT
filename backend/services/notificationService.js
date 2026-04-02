@@ -352,6 +352,210 @@ const deleteNotification = async (id) => {
   return true;
 };
 
+// ============== AUTO-TRIGGER NOTIFICATIONS ==============
+
+/**
+ * Trigger notification when new exam is created
+ * Sends to all STUDENTS in the exam's class
+ */
+const createNotificationForNewExam = async (exam) => {
+  if (!exam || !exam.schoolClass) {
+    return [];
+  }
+
+  const schoolClass = exam.schoolClass._id ? exam.schoolClass : { _id: exam.schoolClass };
+  const title = 'New Exam Posted';
+  const message = `New exam "${exam.name}" scheduled. Check your timetable for details.`;
+
+  return createNotificationForClass({
+    schoolClass,
+    title,
+    message,
+    type: 'SYSTEM',
+  });
+};
+
+/**
+ * Trigger notification when timetable is updated
+ * Sends to all STUDENTS in the timetable's class
+ */
+const createNotificationForUpdatedTimetable = async (timetable) => {
+  if (!timetable || !timetable.schoolClass) {
+    return [];
+  }
+
+  const schoolClass = timetable.schoolClass._id ? timetable.schoolClass : { _id: timetable.schoolClass };
+  const title = 'Timetable Updated';
+  const message = `Your class timetable has been updated. Please check the new schedule.`;
+
+  return createNotificationForClass({
+    schoolClass,
+    title,
+    message,
+    type: 'SYSTEM',
+  });
+};
+
+/**
+ * Trigger notification when marks are released for a student
+ * Sends to the STUDENT and their PARENT(s)
+ */
+const createNotificationForMarksReleased = async (student, marksInfo = {}) => {
+  if (!student || !student._id) {
+    return [];
+  }
+
+  const title = 'Marks Released';
+  const subject = marksInfo.subject ? marksInfo.subject.name : 'Subject';
+  const message = `Your marks for ${subject} have been released.`;
+
+  const created = [];
+
+  // Create notification for student
+  const studentNotif = await createNotificationForUser({
+    recipient: student,
+    schoolClass: student.schoolClass ? { _id: student.schoolClass } : null,
+    title,
+    message,
+    type: 'SYSTEM',
+    roleTag: 'STUDENT',
+  });
+  if (studentNotif) {
+    created.push(studentNotif);
+  }
+
+  // Create notification for all parents of this student
+  if (student.parents && student.parents.length > 0) {
+    const parents = await User.find({ _id: { $in: student.parents } });
+    for (const parent of parents) {
+      const parentNotif = await createNotificationForUser({
+        recipient: parent,
+        schoolClass: null,
+        title: `${student.name}'s Marks Released`,
+        message: `${student.name}'s marks for ${subject} have been released.`,
+        type: 'SYSTEM',
+        roleTag: 'PARENT',
+      });
+      if (parentNotif) {
+        created.push(parentNotif);
+      }
+    }
+  }
+
+  return created;
+};
+
+/**
+ * Create notification for students in specific classes
+ * Used for manual notifications targeting specific grades
+ */
+const createNotificationForStudentsInClasses = async ({
+  classIds,
+  title,
+  message,
+  type = 'MANUAL',
+  createdBy = null,
+  broadcastKey = null,
+  fileMeta = null,
+}) => {
+  if (!classIds || classIds.length === 0) {
+    return [];
+  }
+
+  const classIdStrings = toObjectIdStrings(classIds);
+  const recipients = await User.find({
+    role: 'STUDENT',
+    schoolClass: { $in: classIdStrings },
+  }).populate('schoolClass');
+
+  const created = [];
+  for (const recipient of recipients) {
+    const notification = await createNotificationForUser({
+      recipient,
+      schoolClass: recipient.schoolClass,
+      title,
+      message,
+      type,
+      roleTag: 'STUDENT',
+      createdBy,
+      broadcastKey,
+      fileMeta,
+    });
+    if (notification) {
+      created.push(notification);
+    }
+  }
+
+  return created;
+};
+
+/**
+ * Retrieve notifications visible to a specific user
+ * Based on their role and class/subject memberships
+ */
+const getVisibleNotificationsForUser = async (user) => {
+  if (!user || !user._id) {
+    return [];
+  }
+
+  if (user.role === 'ADMIN') {
+    // Admin sees all notifications (SYSTEM + those created by any admin)
+    return Notification.find({ type: 'SYSTEM' })
+      .sort({ createdAt: -1 })
+      .populate('targetClass', 'name')
+      .populate('targetUser', 'name role')
+      .populate('createdBy', 'name role');
+  }
+
+  if (user.role === 'TEACHER') {
+    // Teacher sees notifications sent to their role
+    return Notification.find({
+      $or: [
+        { targetRole: 'TEACHER' },
+        { targetRole: null, createdBy: user._id }, // Their own notifications
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate('targetClass', 'name')
+      .populate('targetUser', 'name role')
+      .populate('createdBy', 'name role');
+  }
+
+  if (user.role === 'STUDENT') {
+    // Student sees:
+    // 1. Notifications sent to their class
+    // 2. Notifications sent to STUDENT role (all students)
+    // 3. Notifications sent to them individually
+    return Notification.find({
+      $or: [
+        { targetClass: user.schoolClass, targetRole: 'STUDENT' },
+        { targetRole: 'STUDENT' },
+        { targetUser: user._id },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate('targetClass', 'name')
+      .populate('createdBy', 'name role');
+  }
+
+  if (user.role === 'PARENT') {
+    // Parent sees:
+    // 1. Notifications sent to PARENT role (all parents)
+    // 2. Notifications sent to them individually (about their children)
+    return Notification.find({
+      $or: [
+        { targetRole: 'PARENT' },
+        { targetUser: user._id },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate('targetClass', 'name')
+      .populate('createdBy', 'name role');
+  }
+
+  return [];
+};
+
 module.exports = {
   createNotificationForRole,
   createNotificationForClass,
@@ -364,4 +568,9 @@ module.exports = {
   countUnreadNotifications,
   updateNotification,
   deleteNotification,
+  createNotificationForNewExam,
+  createNotificationForUpdatedTimetable,
+  createNotificationForMarksReleased,
+  createNotificationForStudentsInClasses,
+  getVisibleNotificationsForUser,
 };

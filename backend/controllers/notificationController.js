@@ -249,6 +249,28 @@ const deleteNotification = async (req, res) => {
   }
 };
 
+/**
+ * Get notifications visible to current user based on role and memberships
+ * Filters by:
+ * - ADMIN: All system notifications
+ * - TEACHER: Notifications sent to TEACHER role
+ * - STUDENT: Notifications sent to their class + STUDENT role + individual  
+ * - PARENT: Notifications sent to PARENT role + individual
+ */
+const getVisibleNotifications = async (req, res) => {
+  try {
+    const notifications = await notificationService.getVisibleNotificationsForUser(req.currentUser);
+    const unreadCount = await notificationService.countUnreadNotifications(req.currentUser);
+    
+    res.json({
+      notifications: notifications.map(serializeNotification),
+      unreadCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   listNotifications,
   getNotificationOptions,
@@ -259,4 +281,5 @@ module.exports = {
   getNotificationById,
   updateNotification,
   deleteNotification,
+  getVisibleNotifications,
 };

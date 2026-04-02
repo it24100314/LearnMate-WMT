@@ -22,6 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="marks" options={{ headerShown: true, title: 'Marks' }} />
         <Stack.Screen name="fees" options={{ headerShown: true, title: 'Fees' }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
+        <Stack.Screen name="manage-notifications" options={{ headerShown: true, title: 'Manage Notifications' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
