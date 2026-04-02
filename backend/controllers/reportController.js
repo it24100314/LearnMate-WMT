@@ -5,9 +5,9 @@ const reportService = require('../services/reportService');
  */
 const getAttendanceReportPDF = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const pdfBuffer = await reportService.generateAttendanceReportPDF();
@@ -25,9 +25,9 @@ const getAttendanceReportPDF = async (req, res) => {
  */
 const getAttendanceReportCSV = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const csvData = await reportService.generateAttendanceReportCSV();
@@ -45,9 +45,9 @@ const getAttendanceReportCSV = async (req, res) => {
  */
 const getMarksReportPDF = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const pdfBuffer = await reportService.generateMarksReportPDF();
@@ -65,9 +65,9 @@ const getMarksReportPDF = async (req, res) => {
  */
 const getMarksReportCSV = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const csvData = await reportService.generateMarksReportCSV();
@@ -85,9 +85,9 @@ const getMarksReportCSV = async (req, res) => {
  */
 const getFeesReportPDF = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const pdfBuffer = await reportService.generateFeesReportPDF();
@@ -105,9 +105,9 @@ const getFeesReportPDF = async (req, res) => {
  */
 const getFeesReportCSV = async (req, res) => {
   try {
-    // Only ADMIN and DIRECTOR can access reports
-    if (!['ADMIN', 'DIRECTOR'].includes(req.currentUser.role)) {
-      return res.status(403).json({ message: 'Only admin and director can access reports' });
+    // Only ADMIN can access reports
+    if (req.currentUser.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admin can access reports' });
     }
 
     const csvData = await reportService.generateFeesReportCSV();

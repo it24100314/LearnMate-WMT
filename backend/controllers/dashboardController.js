@@ -26,12 +26,6 @@ const getDashboard = async (req, res) => {
       case 'PARENT':
         dashboardData = await dashboardService.getParentDashboard(user);
         break;
-      case 'DIRECTOR':
-        dashboardData = await dashboardService.getDirectorDashboard();
-        break;
-      case 'STUDENT_SUPPORT_OFFICER':
-        dashboardData = await dashboardService.getSupportOfficerDashboard();
-        break;
       default:
         return res.status(403).json({ message: 'Unknown user role' });
     }
@@ -113,46 +107,11 @@ const getParentDashboard = async (req, res) => {
   }
 };
 
-/**
- * Director Dashboard
- */
-const getDirectorDashboard = async (req, res) => {
-  try {
-    const user = req.currentUser;
-    if (user.role !== 'DIRECTOR') {
-      return res.status(403).json({ message: 'Only director can access this' });
-    }
-
-    const dashboardData = await dashboardService.getDirectorDashboard();
-    res.json(dashboardData);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-/**
- * Student Support Officer Dashboard
- */
-const getSupportOfficerDashboard = async (req, res) => {
-  try {
-    const user = req.currentUser;
-    if (user.role !== 'STUDENT_SUPPORT_OFFICER') {
-      return res.status(403).json({ message: 'Only student support officers can access this' });
-    }
-
-    const dashboardData = await dashboardService.getSupportOfficerDashboard();
-    res.json(dashboardData);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 module.exports = {
   getDashboard,
   getAdminDashboard,
   getTeacherDashboard,
   getStudentDashboard,
-  getParentDashboard,
-  getDirectorDashboard,
-  getSupportOfficerDashboard
+  getParentDashboard
 };
+

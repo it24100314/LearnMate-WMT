@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT', 'DIRECTOR', 'STUDENT_SUPPORT_OFFICER'],
+    enum: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'],
     required: true
   },
   active: {
@@ -61,24 +61,23 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving only if it has been modified
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function() {
   // Only hash if password has been added or modified, and is not already hashed (bcrypt hashes start with $2a, $2b, or $2x)
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
   
   // Check if password is already hashed (bcrypt format starts with $2)
   if (this.password.startsWith('$2')) {
-    return next();
+    return;
   }
   
   try {
     const bcrypt = require('bcryptjs');
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
   } catch (error) {
-    next(error);
+    throw error;
   }
 });
 

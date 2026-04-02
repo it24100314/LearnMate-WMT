@@ -7,7 +7,7 @@ const Notification = require('../models/Notification');
 
 /**
  * Get Admin Dashboard Data
- * Statistics for overall system health
+ * High-level system statistics and management
  */
 const getAdminDashboard = async () => {
   try {
@@ -35,6 +35,28 @@ const getAdminDashboard = async () => {
     // Exam statistics
     const totalExams = await Exam.countDocuments();
 
+    // Low attendance alerts for students
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const lowAttendanceStudents = await Attendance.aggregate([
+      { $match: { date: { $gte: lastWeek }, student: { $exists: true } } },
+      { $group: { 
+          _id: '$student', 
+          presentCount: { $sum: { $cond: ['$present', 1, 0] } },
+          totalCount: { $sum: 1 }
+        }
+      },
+      { $addFields: { 
+          attendanceRate: { 
+            $divide: ['$presentCount', '$totalCount'] 
+          }
+        }
+      },
+      { $match: { attendanceRate: { $lt: 0.75 } } },
+      { $limit: 10 }
+    ]);
+
     return {
       totalUsers,
       activeStudents,
@@ -53,6 +75,9 @@ const getAdminDashboard = async () => {
       },
       examStats: {
         total: totalExams
+      },
+      alerts: {
+        lowAttendanceCount: lowAttendanceStudents.length
       }
     };
   } catch (error) {
@@ -257,171 +282,10 @@ const getParentDashboard = async (parent) => {
   }
 };
 
-/**
- * Get Director Dashboard Data - High-level analytics
- */
-const getDirectorDashboard = async () => {
-  try {
-    // Overall statistics
-    const totalStudents = await User.countDocuments({ role: 'STUDENT', active: true });
-    const totalTeachers = await User.countDocuments({ role: 'TEACHER', active: true });
-    const activeUsers = await User.countDocuments({ active: true });
-
-    // Attendance trends
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const lastWeek = new Date(today);
-    lastWeek.setDate(lastWeek.getDate() - 7);
-
-    const attendanceThisWeek = await Attendance.find({
-      date: { $gte: lastWeek, $lte: today },
-      present: true
-    }).countDocuments();
-
-    const totalRecordsThisWeek = await Attendance.countDocuments({
-      date: { $gte: lastWeek, $lte: today }
-    });
-
-    const attendancePercentage = totalRecordsThisWeek > 0 
-      ? ((attendanceThisWeek / totalRecordsThisWeek) * 100).toFixed(2)
-      : 0;
-
-    // Fee collection
-    const totalFeeAmount = await Fee.aggregate([
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-
-    const collectedFees = await Fee.aggregate([
-      { $match: { status: 'PAID' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-
-    const totalExpected = totalFeeAmount[0]?.total || 0;
-    const totalCollected = collectedFees[0]?.total || 0;
-    const collectionPercentage = totalExpected > 0 
-      ? ((totalCollected / totalExpected) * 100).toFixed(2)
-      : 0;
-
-    // Academic performance
-    const topPerformers = await Mark.aggregate([
-      { $match: { score: { $exists: true, $ne: null } } },
-      { $group: { _id: '$student', avgScore: { $avg: '$score' } } },
-      { $sort: { avgScore: -1 } },
-      { $limit: 10 }
-    ]);
-
-    // Students with low attendance (alert indicator)
-    const lowAttendanceStudents = await Attendance.aggregate([
-      { $match: { student: { $exists: true } } },
-      { $group: { 
-          _id: '$student', 
-          presentCount: { $sum: { $cond: ['$present', 1, 0] } },
-          totalCount: { $sum: 1 }
-        }
-      },
-      { $addFields: { 
-          attendanceRate: { 
-            $divide: ['$presentCount', '$totalCount'] 
-          }
-        }
-      },
-      { $match: { attendanceRate: { $lt: 0.75 } } },
-      { $limit: 20 }
-    ]);
-
-    return {
-      summary: {
-        totalStudents,
-        totalTeachers,
-        activeUsers
-      },
-      attendance: {
-        thisWeekPercentage: `${attendancePercentage}%`,
-        trend: 'monitoring'
-      },
-      finances: {
-        totalExpected: totalExpected,
-        totalCollected: totalCollected,
-        collectionPercentage: `${collectionPercentage}%`,
-        pending: await Fee.countDocuments({ status: 'PENDING' }),
-        overdue: await Fee.countDocuments({ status: 'OVERDUE' })
-      },
-      performance: {
-        topPerformers: topPerformers.length,
-        lowAttendanceAlerts: lowAttendanceStudents.length
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching director dashboard:', error);
-    throw error;
-  }
-};
-
-/**
- * Get Student Support Officer Dashboard
- * Alerts on students with low attendance or declining grades
- */
-const getSupportOfficerDashboard = async () => {
-  try {
-    // Students with low attendance
-    const lowAttendanceStudents = await Attendance.aggregate([
-      { $match: { student: { $exists: true } } },
-      { $group: { 
-          _id: '$student', 
-          presentCount: { $sum: { $cond: ['$present', 1, 0] } },
-          totalCount: { $sum: 1 }
-        }
-      },
-      { $addFields: { 
-          attendanceRate: { 
-            $divide: ['$presentCount', '$totalCount'] 
-          }
-        }
-      },
-      { $match: { attendanceRate: { $lt: 0.75 } } },
-      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'studentInfo' } },
-      { $sort: { attendanceRate: 1 } }
-    ]);
-
-    // Students with declining grades (recent marks lower than average)
-    const decliningGradesStudents = await Mark.aggregate([
-      { $match: { score: { $exists: true, $ne: null } } },
-      { $sort: { createdAt: -1 } },
-      { $group: {
-          _id: '$student',
-          recentScores: { $push: '$score' },
-          earlierScores: { $push: '$score' }
-        }
-      },
-      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'studentInfo' } },
-      { $limit: 20 }
-    ]);
-
-    // Alert count
-    const alertCount = lowAttendanceStudents.length + decliningGradesStudents.length;
-
-    return {
-      lowAttendanceAlerts: lowAttendanceStudents.slice(0, 10).map(s => ({
-        student: s.studentInfo[0]?.name || 'Unknown',
-        studentId: s._id,
-        attendanceRate: (s.attendanceRate * 100).toFixed(2),
-        priority: s.attendanceRate < 0.5 ? 'CRITICAL' : 'HIGH'
-      })),
-      decliningGradesAlerts: decliningGradesStudents.slice(0, 10),
-      totalAlerts: alertCount,
-      actionRequired: alertCount > 0
-    };
-  } catch (error) {
-    console.error('Error fetching support officer dashboard:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   getAdminDashboard,
   getTeacherDashboard,
   getStudentDashboard,
-  getParentDashboard,
-  getDirectorDashboard,
-  getSupportOfficerDashboard
+  getParentDashboard
 };
+
