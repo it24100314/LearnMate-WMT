@@ -60,4 +60,26 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Hash password before saving only if it has been modified
+userSchema.pre('save', async function(next) {
+  // Only hash if password has been added or modified, and is not already hashed (bcrypt hashes start with $2a, $2b, or $2x)
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  // Check if password is already hashed (bcrypt format starts with $2)
+  if (this.password.startsWith('$2')) {
+    return next();
+  }
+  
+  try {
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = mongoose.model('User', userSchema);

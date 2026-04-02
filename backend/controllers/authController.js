@@ -165,13 +165,10 @@ const register = async (req, res) => {
       return res.status(400).json({ message: pwError.message });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const userData = {
       username,
       email,
-      password: hashedPassword,
+      password,
       name,
       role,
       active: true
