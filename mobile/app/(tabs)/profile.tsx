@@ -165,11 +165,15 @@ export default function ProfileScreen() {
             <View style={styles.infoCard}>
               <Text style={styles.infoLabel}>Enrolled Subjects</Text>
               <View style={styles.subjectsList}>
-                {profile.subjects.map((subject, index) => (
-                  <View key={subject?._id || index} style={styles.subjectBadge}>
-                    <Text style={styles.subjectName}>{subject?.name}</Text>
-                  </View>
-                ))}
+                {profile.subjects.map((subject, index) => {
+                  const subjectName = subject?.name || 'N/A';
+                  const displayText = subjectName.length > 0 ? subjectName.charAt(0).toUpperCase() : '?';
+                  return (
+                    <View key={subject?._id || index} style={styles.subjectBadge}>
+                      <Text style={styles.subjectName}>{displayText}</Text>
+                    </View>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -184,11 +188,15 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoLabel}>Teaching Subjects</Text>
             <View style={styles.subjectsList}>
-              {profile.subjects.map((subject, index) => (
-                <View key={subject?._id || index} style={[styles.subjectBadge, { backgroundColor: '#E8F5E9' }]}>
-                  <Text style={[styles.subjectName, { color: '#2E7D32' }]}>{subject?.name}</Text>
-                </View>
-              ))}
+              {profile.subjects.map((subject, index) => {
+                const subjectName = subject?.name || 'N/A';
+                const displayText = subjectName.length > 0 ? subjectName.charAt(0).toUpperCase() : '?';
+                return (
+                  <View key={subject?._id || index} style={[styles.subjectBadge, { backgroundColor: '#E8F5E9' }]}>
+                    <Text style={[styles.subjectName, { color: '#2E7D32' }]}>{displayText}</Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
         </View>
