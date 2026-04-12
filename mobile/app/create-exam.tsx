@@ -62,9 +62,9 @@ export default function CreateExamScreen() {
   };
 
   const handleDeadlineChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDeadlinePicker(false);
-    }
+    // CRITICAL: Close picker first to prevent 'dismiss' crash
+    setShowDeadlinePicker(false);
+    
     if (selectedDate) {
       setDeadline(selectedDate);
     }
@@ -223,6 +223,7 @@ export default function CreateExamScreen() {
           mode="datetime"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={handleDeadlineChange}
+          onDismiss={() => setShowDeadlinePicker(false)}
         />
       )}
 
