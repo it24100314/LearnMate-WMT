@@ -19,7 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="materials" options={{ headerShown: true, title: 'Materials' }} />
         <Stack.Screen name="exams" options={{ headerShown: true, title: 'Exams' }} />
-        <Stack.Screen name="marks" options={{ headerShown: true, title: 'Marks' }} />
+        <Stack.Screen name="results" options={{ headerShown: true, title: 'Results' }} />
         <Stack.Screen name="fees" options={{ headerShown: true, title: 'Fees' }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
         <Stack.Screen name="manage-notifications" options={{ headerShown: true, title: 'Manage Notifications' }} />

@@ -152,7 +152,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Student-Specific Information */}
-      {profile.role === 'STUDENT' && profile.schoolClass && (
+      {profile?.role === 'STUDENT' && profile?.schoolClass && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Academic Information</Text>
 
@@ -161,13 +161,13 @@ export default function ProfileScreen() {
             <Text style={styles.infoValue}>{profile.schoolClass.name}</Text>
           </View>
 
-          {profile.subjects && profile.subjects.length > 0 && (
+          {profile?.subjects && profile.subjects.length > 0 && (
             <View style={styles.infoCard}>
               <Text style={styles.infoLabel}>Enrolled Subjects</Text>
               <View style={styles.subjectsList}>
-                {profile.subjects.map((subject) => (
-                  <View key={subject._id} style={styles.subjectBadge}>
-                    <Text style={styles.subjectName}>{subject.name}</Text>
+                {profile.subjects.map((subject, index) => (
+                  <View key={subject?._id || index} style={styles.subjectBadge}>
+                    <Text style={styles.subjectName}>{subject?.name}</Text>
                   </View>
                 ))}
               </View>
@@ -177,16 +177,16 @@ export default function ProfileScreen() {
       )}
 
       {/* Teacher-Specific Information */}
-      {profile.role === 'TEACHER' && profile.subjects && profile.subjects.length > 0 && (
+      {profile?.role === 'TEACHER' && profile?.subjects && profile.subjects.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Teaching Information</Text>
 
           <View style={styles.infoCard}>
             <Text style={styles.infoLabel}>Teaching Subjects</Text>
             <View style={styles.subjectsList}>
-              {profile.subjects.map((subject) => (
-                <View key={subject._id} style={[styles.subjectBadge, { backgroundColor: '#E8F5E9' }]}>
-                  <Text style={[styles.subjectName, { color: '#2E7D32' }]}>{subject.name}</Text>
+              {profile.subjects.map((subject, index) => (
+                <View key={subject?._id || index} style={[styles.subjectBadge, { backgroundColor: '#E8F5E9' }]}>
+                  <Text style={[styles.subjectName, { color: '#2E7D32' }]}>{subject?.name}</Text>
                 </View>
               ))}
             </View>
@@ -195,15 +195,15 @@ export default function ProfileScreen() {
       )}
 
       {/* Parent-Specific Information */}
-      {profile.role === 'PARENT' && profile.children && profile.children.length > 0 && (
+      {profile?.role === 'PARENT' && profile?.children && profile.children.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>My Children</Text>
 
           <View style={styles.childrenList}>
-            {profile.children.map((child) => (
-              <View key={child._id} style={styles.childCard}>
-                <Text style={styles.childName}>{child.name}</Text>
-                {child.schoolClass && (
+            {profile.children.map((child, index) => (
+              <View key={child?._id || index} style={styles.childCard}>
+                <Text style={styles.childName}>{child?.name}</Text>
+                {child?.schoolClass && (
                   <Text style={styles.childGrade}>{child.schoolClass.name}</Text>
                 )}
               </View>
