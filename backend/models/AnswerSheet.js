@@ -12,11 +12,16 @@ const answerSheetSchema = new mongoose.Schema({
     required: true
   },
   filePath: {
-    type: String
+    type: String,
+    required: true
   },
   submittedAt: {
     type: Date,
     default: Date.now
+  },
+  isLate: {
+    type: Boolean,
+    default: false
   },
   status: {
     type: String,

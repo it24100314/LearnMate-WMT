@@ -16,7 +16,11 @@ const examSchema = new mongoose.Schema({
     ref: 'SchoolClass',
     required: true
   },
-  date: {
+  title: {
+    type: String,
+    required: true
+  },
+  deadline: {
     type: Date,
     required: true
   },
@@ -26,15 +30,10 @@ const examSchema = new mongoose.Schema({
   },
   maxMarks: {
     type: Number,
+    required: true,
     default: 100
   },
-  grade: {
-    type: String
-  },
-  title: {
-    type: String
-  },
-  description: {
+  additionalInstructions: {
     type: String
   },
   filePath: {
@@ -44,6 +43,6 @@ const examSchema = new mongoose.Schema({
   timestamps: true
 });
 
-examSchema.index({ schoolClass: 1, subject: 1, date: 1 });
+examSchema.index({ schoolClass: 1, subject: 1, deadline: 1 });
 
 module.exports = mongoose.model('Exam', examSchema);

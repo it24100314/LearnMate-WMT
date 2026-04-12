@@ -68,12 +68,11 @@ const serializeExam = (exam) => ({
   subject: exam.subject,
   teacher: exam.teacher,
   schoolClass: exam.schoolClass,
-  date: exam.date,
+  title: exam.title,
+  deadline: exam.deadline,
   passMark: exam.passMark,
   maxMarks: exam.maxMarks,
-  grade: exam.grade,
-  title: exam.title,
-  description: exam.description,
+  additionalInstructions: exam.additionalInstructions,
   filePath: exam.filePath,
   createdAt: exam.createdAt,
   updatedAt: exam.updatedAt,
@@ -85,6 +84,7 @@ const serializeAnswerSheet = (sheet) => ({
   student: sheet.student,
   filePath: sheet.filePath,
   submittedAt: sheet.submittedAt,
+  isLate: sheet.isLate,
   status: sheet.status,
   score: sheet.score,
   comments: sheet.comments,
@@ -129,19 +129,19 @@ const listExams = async (req, res) => {
     let exams;
 
     if (req.user.role === 'TEACHER') {
-      exams = await hydrateExams(Exam.find({ teacher: req.user.id }).sort({ date: -1 }));
+      exams = await hydrateExams(Exam.find({ teacher: req.user.id }).sort({ deadline: -1 }));
     } else if (req.user.role === 'STUDENT') {
       if (!req.currentUser.schoolClass) {
         exams = [];
       } else {
         const subjectIds = (req.currentUser.subjects || []).map((id) => String(id));
         const classExams = await hydrateExams(
-          Exam.find({ schoolClass: req.currentUser.schoolClass }).sort({ date: -1 })
+          Exam.find({ schoolClass: req.currentUser.schoolClass }).sort({ deadline: -1 })
         );
         exams = classExams.filter((exam) => subjectIds.includes(String(exam.subject?._id)));
       }
     } else {
-      exams = await hydrateExams(Exam.find().sort({ date: -1 }));
+      exams = await hydrateExams(Exam.find().sort({ deadline: -1 }));
     }
 
     const [subjects, schoolClasses] = await Promise.all([
@@ -159,9 +159,14 @@ const createExam = async (req, res) => {
   try {
     const subjectId = req.body.subjectId || req.body.subject;
     const schoolClassId = req.body.schoolClassId || req.body.schoolClass || req.body.classId;
-    const date = parseIsoDate(req.body.date);
+    const deadline = parseIsoDate(req.body.deadline || req.body.date);
     const passMark = req.body.passMark !== undefined ? Number(req.body.passMark) : null;
     const maxMarks = req.body.maxMarks !== undefined ? Number(req.body.maxMarks) : null;
+    const title = req.body.title && String(req.body.title).trim() !== '' ? String(req.body.title).trim() : null;
+
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
 
     const [subject, schoolClass] = await Promise.all([
       Subject.findById(subjectId),
@@ -176,8 +181,8 @@ const createExam = async (req, res) => {
       return res.status(400).json({ message: 'Class is required' });
     }
 
-    if (!date) {
-      return res.status(400).json({ message: 'Date is required' });
+    if (!deadline) {
+      return res.status(400).json({ message: 'Deadline is required' });
     }
 
     if (maxMarks === null || Number.isNaN(maxMarks)) {
@@ -192,16 +197,11 @@ const createExam = async (req, res) => {
       subject: subject._id,
       teacher: req.currentUser._id,
       schoolClass: schoolClass._id,
-      date,
+      title,
+      deadline,
       passMark,
       maxMarks,
-      grade: schoolClass.name,
-      title: req.body.title && String(req.body.title).trim() !== ''
-        ? String(req.body.title).trim()
-        : `${subject.name} Exam - ${schoolClass.name}`,
-      description: req.body.description && String(req.body.description).trim() !== ''
-        ? String(req.body.description).trim()
-        : `Exam for ${schoolClass.name} - ${subject.name}`,
+      additionalInstructions: req.body.additionalInstructions || null,
       filePath: req.file?.filename || null,
     });
 
@@ -244,12 +244,12 @@ const updateExam = async (req, res) => {
       return res.status(400).json({ message: 'Class is required' });
     }
 
-    if (req.body.date) {
-      const date = parseIsoDate(req.body.date);
-      if (!date) {
-        return res.status(400).json({ message: 'Date is required' });
+    if (req.body.deadline || req.body.date) {
+      const deadline = parseIsoDate(req.body.deadline || req.body.date);
+      if (!deadline) {
+        return res.status(400).json({ message: 'Deadline is required' });
       }
-      exam.date = date;
+      exam.deadline = deadline;
     }
 
     if (req.body.maxMarks !== undefined) {
@@ -270,9 +270,8 @@ const updateExam = async (req, res) => {
 
     exam.subject = subject._id;
     exam.schoolClass = schoolClass._id;
-    exam.grade = schoolClass.name;
     exam.title = req.body.title !== undefined ? req.body.title : exam.title;
-    exam.description = req.body.description !== undefined ? req.body.description : exam.description;
+    exam.additionalInstructions = req.body.additionalInstructions !== undefined ? req.body.additionalInstructions : exam.additionalInstructions;
 
     if (req.file?.filename) {
       removeFileIfExists('exams', exam.filePath);
@@ -320,7 +319,7 @@ const searchExams = async (req, res) => {
     if (req.query.subjectId) filter.subject = req.query.subjectId;
     if (req.query.classId) filter.schoolClass = req.query.classId;
 
-    const exams = await hydrateExams(Exam.find(filter).sort({ date: -1 }));
+    const exams = await hydrateExams(Exam.find(filter).sort({ deadline: -1 }));
     res.json({ exams: exams.map(serializeExam) });
   } catch (error) {
     res.status(500).json({ message: `Error searching exams: ${error.message}` });
@@ -366,19 +365,25 @@ const uploadAnswer = async (req, res) => {
       return res.status(403).json({ message: 'You are not authorized to upload answers for this exam!' });
     }
 
+    const now = new Date();
+    const deadline = new Date(exam.deadline);
+    const isLate = now > deadline;
+
     let answerSheet = await AnswerSheet.findOne({ exam: exam._id, student: student._id });
     if (!answerSheet) {
       answerSheet = await AnswerSheet.create({
         exam: exam._id,
         student: student._id,
         filePath: req.file.filename,
-        submittedAt: new Date(),
+        submittedAt: now,
+        isLate,
         status: 'SUBMITTED',
       });
     } else {
       removeFileIfExists('answer-sheets', answerSheet.filePath);
       answerSheet.filePath = req.file.filename;
-      answerSheet.submittedAt = new Date();
+      answerSheet.submittedAt = now;
+      answerSheet.isLate = isLate;
       answerSheet.status = 'SUBMITTED';
       await answerSheet.save();
     }

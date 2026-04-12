@@ -39,4 +39,25 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserById, updateUser, deleteUser };
+const getTeacherAssignments = async (req, res) => {
+  try {
+    const teacher = await User.findById(req.user.id).populate('schoolClass').populate('subjects');
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    if (teacher.role !== 'TEACHER') {
+      return res.status(403).json({ message: 'Only TEACHER role can access this endpoint' });
+    }
+
+    // Return classes and subjects assigned to this teacher
+    res.json({
+      schoolClasses: teacher.schoolClass ? [teacher.schoolClass] : [],
+      subjects: teacher.subjects || []
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, getUserById, updateUser, deleteUser, getTeacherAssignments };

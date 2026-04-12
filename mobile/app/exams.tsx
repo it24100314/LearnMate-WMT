@@ -2,16 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'expo-router';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
 
 type Subject = { _id: string; name: string };
 type SchoolClass = { _id: string; name: string };
+type AnswerSheet = {
+  _id: string;
+  exam: string;
+  student: string;
+  submittedAt: string;
+  isLate: boolean;
+  status: string;
+  score?: number;
+  comments?: string;
+};
 type Exam = {
   _id: string;
   title: string;
-  description?: string;
-  date: string;
+  additionalInstructions?: string;
+  deadline: string;
   passMark: number;
   maxMarks: number;
   subject?: Subject;
@@ -20,8 +31,10 @@ type Exam = {
 };
 
 export default function ExamsScreen() {
+  const router = useRouter();
   const [role, setRole] = useState('');
   const [exams, setExams] = useState<Exam[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, AnswerSheet>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingExamId, setUploadingExamId] = useState<string | null>(null);
@@ -33,7 +46,24 @@ export default function ExamsScreen() {
       setRole(savedRole || '');
 
       const response = await api.get('/exams/list');
-      setExams(response.data?.exams ?? []);
+      const examsData = response.data?.exams ?? [];
+      setExams(examsData);
+
+      // If student, load their submissions
+      if (savedRole === 'STUDENT' && examsData.length > 0) {
+        const submissionsMap: Record<string, AnswerSheet> = {};
+        for (const exam of examsData) {
+          try {
+            const subRes = await api.get(`/exams/my-submissions/${exam._id}`);
+            if (subRes.data?.answerSheet) {
+              submissionsMap[exam._id] = subRes.data.answerSheet;
+            }
+          } catch {
+            // No submission yet
+          }
+        }
+        setSubmissions(submissionsMap);
+      }
     } catch (error) {
       console.error(error);
       setExams([]);
@@ -46,6 +76,25 @@ export default function ExamsScreen() {
   useEffect(() => {
     loadExams();
   }, []);
+
+  const calculateDeadlineStatus = (deadline: string) => {
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffMs = deadlineDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+
+    if (diffMs < 0) {
+      return { text: 'Deadline Passed', isOverdue: true, color: '#DC2626' };
+    }
+    if (diffDays > 1) {
+      return { text: `Due in ${diffDays} days`, isOverdue: false, color: '#059669' };
+    }
+    if (diffHours > 0) {
+      return { text: `Due in ${diffHours} hours`, isOverdue: false, color: '#D97706' };
+    }
+    return { text: 'Due Today', isOverdue: false, color: '#D97706' };
+  };
 
   const uploadAnswer = async (examId: string) => {
     try {
@@ -68,9 +117,16 @@ export default function ExamsScreen() {
         type: file.mimeType || 'application/pdf',
       } as unknown as Blob);
 
-      await api.post(`/exams/upload-answer/${examId}`, formData, {
+      const response = await api.post(`/exams/upload-answer/${examId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      if (response.data?.answerSheet) {
+        setSubmissions((prev) => ({
+          ...prev,
+          [examId]: response.data.answerSheet,
+        }));
+      }
 
       Alert.alert('Success', 'Answer sheet uploaded successfully!');
     } catch (error: any) {
@@ -117,34 +173,89 @@ export default function ExamsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadExams(); }} />}
       contentContainerStyle={exams.length === 0 ? styles.center : styles.list}
       ListEmptyComponent={<Text style={styles.empty}>No exams found.</Text>}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.meta}>Subject: {item.subject?.name || '-'}</Text>
-          <Text style={styles.meta}>Class: {item.schoolClass?.name || '-'}</Text>
-          <Text style={styles.meta}>Date: {new Date(item.date).toLocaleDateString()}</Text>
-          <Text style={styles.score}>Pass: {item.passMark} / {item.maxMarks}</Text>
-          {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
+      renderItem={({ item }) => {
+        const deadlineStatus = calculateDeadlineStatus(item.deadline);
+        const submission = submissions[item._id];
+        const isLate = submission?.isLate;
 
-          {item.filePath ? (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => downloadExamFile(item)}
-              disabled={downloadingExamId === item._id}
-            >
-              <Text style={styles.secondaryButtonText}>
-                {downloadingExamId === item._id ? 'Downloading...' : 'Download Exam File'}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
+        return (
+          <View style={styles.card}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.meta}>Subject: {item.subject?.name || '-'}</Text>
+            <Text style={styles.meta}>Class: {item.schoolClass?.name || '-'}</Text>
+            <Text style={[styles.meta, { color: deadlineStatus.color, fontWeight: '600', marginTop: 6 }]}>
+              ⏰ {deadlineStatus.text}
+            </Text>
+            <Text style={styles.meta}>Deadline: {new Date(item.deadline).toLocaleString()}</Text>
+            <Text style={styles.score}>Max Marks: {item.maxMarks} | Pass: {item.passMark}</Text>
 
-          {role === 'STUDENT' ? (
-            <TouchableOpacity style={styles.button} onPress={() => uploadAnswer(item._id)} disabled={uploadingExamId === item._id}>
-              <Text style={styles.buttonText}>{uploadingExamId === item._id ? 'Uploading...' : 'Upload Answer Sheet'}</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      )}
+            {item.additionalInstructions && (
+              <Text style={styles.instructions}>📝 {item.additionalInstructions}</Text>
+            )}
+
+            {submission && (
+              <View style={[styles.submissionStatus, isLate && styles.submissionStatusLate]}>
+                <Text style={[styles.submissionStatusText, isLate && styles.submissionStatusTextLate]}>
+                  ✓ Submitted {isLate ? '(LATE)' : 'On Time'}
+                </Text>
+                {submission.score !== undefined && (
+                  <Text style={styles.submissionGrade}>
+                    Score: {submission.score}/{item.maxMarks}
+                  </Text>
+                )}
+                {submission.comments && (
+                  <Text style={styles.submissionComments}>Comment: {submission.comments}</Text>
+                )}
+              </View>
+            )}
+
+            {item.filePath ? (
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => downloadExamFile(item)}
+                disabled={downloadingExamId === item._id}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {downloadingExamId === item._id ? 'Downloading...' : '📥 Download Exam PDF'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {role === 'TEACHER' && (
+              <TouchableOpacity
+                style={styles.gradeButton}
+                onPress={() => router.push({ pathname: '/grade-submissions', params: { examId: item._id } })}
+              >
+                <Text style={styles.gradeButtonText}>📋 Grade Submissions</Text>
+              </TouchableOpacity>
+            )}
+
+            {role === 'STUDENT' && !submission ? (
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => uploadAnswer(item._id)}
+                disabled={uploadingExamId === item._id}
+              >
+                <Text style={styles.buttonText}>
+                  {uploadingExamId === item._id ? 'Uploading...' : '📤 Upload Answer Sheet'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {role === 'STUDENT' && submission && (
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={() => uploadAnswer(item._id)}
+                disabled={uploadingExamId === item._id}
+              >
+                <Text style={styles.buttonSecondaryText}>
+                  {uploadingExamId === item._id ? 'Uploading...' : '🔄 Re-upload Answer Sheet'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      }}
     />
   );
 }
@@ -167,6 +278,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#2563eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   title: {
     fontSize: 16,
@@ -184,10 +299,42 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1d4ed8',
   },
-  description: {
+  instructions: {
     marginTop: 6,
-    color: '#374151',
     fontSize: 13,
+    color: '#374151',
+    fontStyle: 'italic',
+  },
+  submissionStatus: {
+    marginTop: 10,
+    backgroundColor: '#ECFDF5',
+    borderLeft: 3,
+    borderLeftColor: '#10B981',
+    padding: 10,
+    borderRadius: 6,
+  },
+  submissionStatusLate: {
+    backgroundColor: '#FEF2F2',
+    borderLeftColor: '#DC2626',
+  },
+  submissionStatusText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  submissionStatusTextLate: {
+    color: '#DC2626',
+  },
+  submissionGrade: {
+    fontSize: 12,
+    color: '#047857',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  submissionComments: {
+    fontSize: 12,
+    color: '#4b5563',
+    marginTop: 4,
   },
   button: {
     marginTop: 10,
@@ -198,6 +345,15 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontWeight: '700',
+  },
+  buttonSecondary: {
+    backgroundColor: '#TRANSPARENT',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
+  buttonSecondaryText: {
+    color: '#059669',
     fontWeight: '700',
   },
   secondaryButton: {
@@ -211,6 +367,17 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#2563eb',
     fontWeight: '600',
+  },
+  gradeButton: {
+    marginTop: 10,
+    backgroundColor: '#6366F1',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  gradeButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   empty: {
     color: '#6b7280',
