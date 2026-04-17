@@ -3,16 +3,29 @@ import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, 
 import { useLocalSearchParams } from 'expo-router';
 import api from '../utils/api';
 import * as SecureStore from 'expo-secure-store';
+import { downloadAndShareApiFile } from '../utils/download';
 
 type NamedItem = { _id: string; name: string };
 type Student = { _id: string; name: string; username: string };
 type Exam = { _id: string; title: string; maxMarks: number; subject?: NamedItem };
+type AnswerSheet = {
+  _id: string;
+  exam: string;
+  student: string;
+  filePath?: string;
+  submittedAt?: string;
+  isLate?: boolean;
+  status: string;
+  score?: number;
+  comments?: string;
+};
 
 export default function EnterMarksScreen() {
   const params = useLocalSearchParams();
   const [classes, setClasses] = useState<NamedItem[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, AnswerSheet>>({});
   
   const [selectedClassId, setSelectedClassId] = useState(params.classId ? String(params.classId) : '');
   const [selectedExamId, setSelectedExamId] = useState('');
@@ -22,6 +35,7 @@ export default function EnterMarksScreen() {
   const [loading, setLoading] = useState(true);
   const [fetchingRoster, setFetchingRoster] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -55,6 +69,7 @@ export default function EnterMarksScreen() {
       setExams(examsRes.data?.exams || []);
       setSelectedExamId('');
       setMarksData({});
+      setSubmissions({});
     } catch (err) {
       Alert.alert('Error', 'Failed to load roster or exams for class.');
     } finally {
@@ -62,9 +77,52 @@ export default function EnterMarksScreen() {
     }
   };
 
+  const fetchAnswerSheets = async (examId: string) => {
+    try {
+      // Fetch answer sheets for the selected exam
+      const reviewRes = await api.get(`/exams/review/${examId}`);
+      const { answerSheets } = reviewRes.data;
+
+      const submissionsMap: Record<string, AnswerSheet> = {};
+      answerSheets?.forEach((sheet: AnswerSheet) => {
+        if (sheet.student?._id) {
+          submissionsMap[sheet.student._id] = sheet;
+        }
+      });
+
+      setSubmissions(submissionsMap);
+    } catch (err) {
+      console.error('Error fetching submissions:', err);
+      setSubmissions({});
+    }
+  };
+
   const handleClassChange = (classId: string) => {
     setSelectedClassId(classId);
     fetchExamsAndStudents(classId);
+  };
+
+  const handleExamChange = (examId: string) => {
+    setSelectedExamId(examId);
+    setMarksData({});
+    fetchAnswerSheets(examId);
+  };
+
+  const downloadAnswerSheet = async (student: Student, answerSheet: AnswerSheet) => {
+    try {
+      setDownloadingId(student._id);
+      const fileName = `${student.name}_answer_sheet.pdf`;
+
+      await downloadAndShareApiFile({
+        endpoint: `/exams/download-answer/${answerSheet._id}`,
+        fileName,
+        dialogTitle: 'Open or share answer sheet',
+      });
+    } catch (error: any) {
+      Alert.alert('Download Failed', error?.message || 'Unable to download answer sheet');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const handleScoreChange = (studentId: string, value: string) => {
@@ -149,7 +207,7 @@ export default function EnterMarksScreen() {
             <TouchableOpacity 
               key={e._id} 
               style={[styles.chip, selectedExamId === e._id && styles.chipActive]}
-              onPress={() => setSelectedExamId(e._id)}
+              onPress={() => handleExamChange(e._id)}
             >
               <Text style={selectedExamId === e._id ? styles.chipTextActive : styles.chipText}>
                 {e.title} {e.subject ? `(${e.subject.name})` : ''} - Max {e.maxMarks}
@@ -167,27 +225,47 @@ export default function EnterMarksScreen() {
           keyExtractor={item => item._id}
           ListEmptyComponent={<Text style={styles.noDataText}>{selectedClassId ? 'No students' : 'Select a class to begin'}</Text>}
           contentContainerStyle={{ padding: 20 }}
-          renderItem={({ item }) => (
-            <View style={styles.studentCard}>
-              <Text style={styles.studentName}>{item.name} ({item.username})</Text>
-              
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.scoreInput}
-                  placeholder="Score"
-                  keyboardType="numeric"
-                  value={marksData[item._id]?.score || ''}
-                  onChangeText={(val) => handleScoreChange(item._id, val)}
-                />
-                <TextInput
-                  style={styles.commentInput}
-                  placeholder="Comments"
-                  value={marksData[item._id]?.comments || ''}
-                  onChangeText={(val) => handleCommentChange(item._id, val)}
-                />
+          renderItem={({ item }) => {
+            const submission = submissions[item._id];
+            return (
+              <View style={styles.studentCard}>
+                <Text style={styles.studentName}>{item.name} ({item.username})</Text>
+                
+                {/* Answer Sheet Display */}
+                {submission && submission.filePath && (
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => downloadAnswerSheet(item, submission)}
+                    disabled={downloadingId === item._id}
+                  >
+                    <Text style={styles.downloadButtonText}>
+                      {downloadingId === item._id ? '📥 Downloading...' : '📄 Download Answer Sheet'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {submission && !submission.filePath && (
+                  <Text style={styles.noAnswerText}>No answer sheet submitted</Text>
+                )}
+                
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={styles.scoreInput}
+                    placeholder="Score"
+                    keyboardType="numeric"
+                    value={marksData[item._id]?.score || ''}
+                    onChangeText={(val) => handleScoreChange(item._id, val)}
+                  />
+                  <TextInput
+                    style={styles.commentInput}
+                    placeholder="Comments"
+                    value={marksData[item._id]?.comments || ''}
+                    onChangeText={(val) => handleCommentChange(item._id, val)}
+                  />
+                </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -225,5 +303,8 @@ const styles = StyleSheet.create({
   commentInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 10, flex: 1, fontSize: 14 },
   footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
   submitBtn: { backgroundColor: '#10b981', paddingVertical: 15, borderRadius: 10, alignItems: 'center' },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  submitText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  downloadButton: { backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
+  downloadButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  noAnswerText: { fontSize: 13, color: '#9ca3af', fontStyle: 'italic', marginBottom: 10 }
 });

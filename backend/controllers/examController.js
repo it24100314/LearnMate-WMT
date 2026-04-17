@@ -623,6 +623,46 @@ const editMark = async (req, res) => {
   }
 };
 
+const deleteAnswerSheet = async (req, res) => {
+  try {
+    const answerSheetId = req.params.id;
+    const answerSheet = await AnswerSheet.findById(answerSheetId);
+
+    if (!answerSheet) {
+      return res.status(404).json({ message: 'Answer sheet not found' });
+    }
+
+    // Verify the current user is the student who submitted this answer sheet
+    if (answerSheet.student.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only delete your own answer sheets' });
+    }
+
+    // Check if the exam deadline has passed
+    const exam = await Exam.findById(answerSheet.exam);
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
+    const now = new Date();
+    const deadline = new Date(exam.deadline);
+    if (now > deadline) {
+      return res.status(400).json({ message: 'Cannot delete answer sheet after deadline has passed' });
+    }
+
+    // Remove the file from storage
+    if (answerSheet.filePath) {
+      removeFileIfExists('answer-sheets', answerSheet.filePath);
+    }
+
+    // Delete from database
+    await AnswerSheet.findByIdAndDelete(answerSheetId);
+
+    res.json({ message: 'Answer sheet deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: `Failed to delete answer sheet: ${error.message}` });
+  }
+};
+
 module.exports = {
   getExamOptions,
   listExams,
@@ -633,6 +673,7 @@ module.exports = {
   downloadExam,
   uploadAnswer,
   downloadAnswerSheet,
+  deleteAnswerSheet,
   reviewAnswers,
   gradeAnswer,
   gradeExam,

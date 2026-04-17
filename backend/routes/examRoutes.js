@@ -10,6 +10,7 @@ const {
   downloadExam,
   uploadAnswer,
   downloadAnswerSheet,
+  deleteAnswerSheet,
   reviewAnswers,
   gradeAnswer,
   gradeExam,
@@ -34,6 +35,7 @@ router.put('/edit/:id', authorize('TEACHER'), examUpload, updateExam);
 router.delete('/delete/:id', authorize('TEACHER', 'ADMIN'), deleteExam);
 
 router.post('/upload-answer/:id', authorize('STUDENT'), answerUpload, uploadAnswer);
+router.delete('/delete-answer/:id', authorize('STUDENT'), deleteAnswerSheet);
 router.get('/review-answers/:id', authorize('TEACHER'), reviewAnswers);
 router.post('/grade-answer/:answerSheetId', authorize('TEACHER'), gradeAnswer);
 router.post('/grade-exam/:id', authorize('TEACHER'), gradeExam);

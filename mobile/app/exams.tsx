@@ -39,6 +39,8 @@ export default function ExamsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [uploadingExamId, setUploadingExamId] = useState<string | null>(null);
   const [downloadingExamId, setDownloadingExamId] = useState<string | null>(null);
+  const [downloadingAnswerId, setDownloadingAnswerId] = useState<string | null>(null);
+  const [deletingAnswerId, setDeletingAnswerId] = useState<string | null>(null);
 
   const loadExams = async () => {
     try {
@@ -136,6 +138,59 @@ export default function ExamsScreen() {
     }
   };
 
+  const downloadAnswerSheet = async (submission: AnswerSheet) => {
+    try {
+      setDownloadingAnswerId(submission._id);
+      const fileName = `answer_sheet_${submission._id}.pdf`;
+
+      const downloadResult = await downloadAndShareApiFile({
+        endpoint: `/exams/download-answer/${submission._id}`,
+        fileName,
+        dialogTitle: 'Open or share answer sheet',
+      });
+
+      if (!downloadResult.shared) {
+        Alert.alert('Downloaded', `Answer sheet saved`);
+      }
+    } catch (error: any) {
+      Alert.alert('Download Failed', error?.message || 'Unable to download answer sheet');
+    } finally {
+      setDownloadingAnswerId(null);
+    }
+  };
+
+  const deleteAnswerSheet = async (examId: string, submissionId: string) => {
+    Alert.alert(
+      'Delete Answer Sheet',
+      'Are you sure you want to delete this answer sheet? You can upload a new one.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              setDeletingAnswerId(submissionId);
+              await api.delete(`/exams/delete-answer/${submissionId}`);
+              
+              setSubmissions((prev) => {
+                const updated = { ...prev };
+                delete updated[examId];
+                return updated;
+              });
+              
+              Alert.alert('Success', 'Answer sheet deleted. You can upload a new one.');
+            } catch (error: any) {
+              Alert.alert('Delete Failed', error?.response?.data?.message || 'Failed to delete answer sheet');
+            } finally {
+              setDeletingAnswerId(null);
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
   const downloadExamFile = async (exam: Exam) => {
     try {
       setDownloadingExamId(exam._id);
@@ -206,6 +261,37 @@ export default function ExamsScreen() {
                 )}
                 {submission.comments && (
                   <Text style={styles.submissionComments}>Comment: {submission.comments}</Text>
+                )}
+
+                {/* Answer Sheet File Display */}
+                {submission.filePath && (
+                  <View style={styles.answerSheetFile}>
+                    <Text style={styles.answerSheetLabel}>📄 Your Answer Sheet</Text>
+                    
+                    {/* Download Button */}
+                    <TouchableOpacity
+                      style={styles.fileButton}
+                      onPress={() => downloadAnswerSheet(submission)}
+                      disabled={downloadingAnswerId === submission._id}
+                    >
+                      <Text style={styles.fileButtonText}>
+                        {downloadingAnswerId === submission._id ? 'Downloading...' : '📥 Download'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Delete Button (only if deadline hasn't passed) */}
+                    {!calculateDeadlineStatus(item.deadline).isOverdue && (
+                      <TouchableOpacity
+                        style={[styles.fileButton, styles.deleteButton]}
+                        onPress={() => deleteAnswerSheet(item._id, submission._id)}
+                        disabled={deletingAnswerId === submission._id}
+                      >
+                        <Text style={styles.deleteButtonText}>
+                          {deletingAnswerId === submission._id ? 'Deleting...' : '🗑️ Delete & Re-upload'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 )}
               </View>
             )}
@@ -379,6 +465,41 @@ const styles = StyleSheet.create({
   gradeButtonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  answerSheetFile: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#F0F4FF',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2563eb',
+  },
+  answerSheetLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1d4ed8',
+    marginBottom: 8,
+  },
+  fileButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 6,
+    alignItems: 'center',
+  },
+  fileButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
   },
   empty: {
     color: '#6b7280',
