@@ -136,7 +136,7 @@ const getTimetables = async (req, res) => {
         return res.json({ timetables: [], error: 'No class assigned. Please contact your administrator.' });
       }
 
-      const subjectIds = (req.currentUser.subjects || []).map((id) => String(id));
+      const subjectIds = (req.currentUser.subjects || []).map((subject) => String(subject._id || subject));
       const baseQuery = {
         schoolClass: req.currentUser.schoolClass,
       };

@@ -134,7 +134,7 @@ const listExams = async (req, res) => {
       if (!req.currentUser.schoolClass) {
         exams = [];
       } else {
-        const subjectIds = (req.currentUser.subjects || []).map((id) => String(id));
+        const subjectIds = (req.currentUser.subjects || []).map((subject) => String(subject._id || subject));
         const classExams = await hydrateExams(
           Exam.find({ schoolClass: req.currentUser.schoolClass._id || req.currentUser.schoolClass }).sort({ deadline: -1 })
         );
@@ -356,10 +356,10 @@ const uploadAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Please select a file to upload!' });
     }
 
-    const student = req.user;
-    const subjectIds = (student.subjects || []).map((id) => String(id));
+    const student = req.currentUser;
+    const subjectIds = (student.subjects || []).map((subject) => String(subject._id || subject));
     const enrolledInSubject = subjectIds.includes(String(exam.subject?._id));
-    const sameClass = String(student.schoolClass || '') === String(exam.schoolClass?._id || exam.schoolClass);
+    const sameClass = String(student.schoolClass?._id || student.schoolClass) === String(exam.schoolClass?._id || exam.schoolClass);
 
     if (!enrolledInSubject || !sameClass) {
       return res.status(403).json({ message: 'You are not authorized to upload answers for this exam!' });
