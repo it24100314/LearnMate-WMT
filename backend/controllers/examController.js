@@ -330,17 +330,22 @@ const downloadExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
     if (!exam || !exam.filePath) {
+      console.log('Exam download: Exam or filePath not found', { examId: req.params.id, filePath: exam?.filePath });
       return res.status(404).json({ message: 'Exam file not found' });
     }
 
     const filePath = path.join(__dirname, '..', 'uploads', 'exams', exam.filePath);
+    console.log('Exam download: filePath=', filePath);
+    
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Exam file not found' });
+      console.log('Exam download: File does not exist at', filePath);
+      return res.status(404).json({ message: 'Exam file not found on server' });
     }
 
     const subjectName = exam.subject?.name || 'subject';
     res.download(filePath, `exam_${exam._id}_${subjectName}.pdf`);
   } catch (error) {
+    console.error('Exam download error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -399,16 +404,21 @@ const downloadAnswerSheet = async (req, res) => {
   try {
     const answerSheet = await hydrateAnswerSheets(AnswerSheet.findById(req.params.id));
     if (!answerSheet || !answerSheet.filePath) {
+      console.log('Answer sheet download: Not found or no filePath', { answerSheetId: req.params.id, filePath: answerSheet?.filePath });
       return res.status(404).json({ message: 'Answer sheet file not found' });
     }
 
     const filePath = path.join(__dirname, '..', 'uploads', 'answer-sheets', answerSheet.filePath);
+    console.log('Answer sheet download: filePath=', filePath);
+    
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Answer sheet file not found' });
+      console.log('Answer sheet download: File does not exist at', filePath);
+      return res.status(404).json({ message: 'Answer sheet file not found on server' });
     }
 
     res.download(filePath, `answer_${answerSheet._id}_${answerSheet.student?.name || 'student'}.pdf`);
   } catch (error) {
+    console.error('Answer sheet download error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -626,26 +636,32 @@ const editMark = async (req, res) => {
 const deleteAnswerSheet = async (req, res) => {
   try {
     const answerSheetId = req.params.id;
+    console.log('Delete answer sheet:', answerSheetId, 'User:', req.user.id);
+    
     const answerSheet = await AnswerSheet.findById(answerSheetId);
 
     if (!answerSheet) {
+      console.log('Delete: Answer sheet not found');
       return res.status(404).json({ message: 'Answer sheet not found' });
     }
 
     // Verify the current user is the student who submitted this answer sheet
     if (answerSheet.student.toString() !== req.user.id) {
+      console.log('Delete: Not student owner', answerSheet.student, '!==', req.user.id);
       return res.status(403).json({ message: 'You can only delete your own answer sheets' });
     }
 
     // Check if the exam deadline has passed
     const exam = await Exam.findById(answerSheet.exam);
     if (!exam) {
+      console.log('Delete: Exam not found');
       return res.status(404).json({ message: 'Exam not found' });
     }
 
     const now = new Date();
     const deadline = new Date(exam.deadline);
     if (now > deadline) {
+      console.log('Delete: Deadline passed', now, '>', deadline);
       return res.status(400).json({ message: 'Cannot delete answer sheet after deadline has passed' });
     }
 
@@ -656,9 +672,11 @@ const deleteAnswerSheet = async (req, res) => {
 
     // Delete from database
     await AnswerSheet.findByIdAndDelete(answerSheetId);
+    console.log('Delete: Success');
 
     res.json({ message: 'Answer sheet deleted successfully' });
   } catch (error) {
+    console.error('Delete answer sheet error:', error);
     res.status(500).json({ message: `Failed to delete answer sheet: ${error.message}` });
   }
 };

@@ -168,11 +168,7 @@ export default function CreateExamScreen() {
         } as any);
       }
 
-      await api.post('/exams/create', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.post('/exams/create', formData);
 
       Alert.alert('Success', 'Exam created successfully!');
       setTitle('');

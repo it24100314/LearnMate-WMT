@@ -119,9 +119,7 @@ export default function ExamsScreen() {
         type: file.mimeType || 'application/pdf',
       } as unknown as Blob);
 
-      const response = await api.post(`/exams/upload-answer/${examId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.post(`/exams/upload-answer/${examId}`, formData);
 
       if (response.data?.answerSheet) {
         setSubmissions((prev) => ({
@@ -170,8 +168,11 @@ export default function ExamsScreen() {
           onPress: async () => {
             try {
               setDeletingAnswerId(submissionId);
+              console.log('Deleting answer sheet:', submissionId);
+              
               await api.delete(`/exams/delete-answer/${submissionId}`);
               
+              console.log('Delete successful, removing from state');
               setSubmissions((prev) => {
                 const updated = { ...prev };
                 delete updated[examId];
@@ -180,7 +181,8 @@ export default function ExamsScreen() {
               
               Alert.alert('Success', 'Answer sheet deleted. You can upload a new one.');
             } catch (error: any) {
-              Alert.alert('Delete Failed', error?.response?.data?.message || 'Failed to delete answer sheet');
+              console.error('Delete error:', error?.response?.status, error?.response?.data?.message, error?.message);
+              Alert.alert('Delete Failed', error?.response?.data?.message || error?.message || 'Failed to delete answer sheet');
             } finally {
               setDeletingAnswerId(null);
             }
@@ -204,10 +206,11 @@ export default function ExamsScreen() {
       });
 
       if (!downloadResult.shared) {
-        Alert.alert('Downloaded', `Exam saved to ${downloadResult.uri}`);
+        Alert.alert('Downloaded', `Exam saved`);
       }
     } catch (error: any) {
-      Alert.alert('Download Failed', error?.message || 'Unable to download exam file');
+      console.error('Exam download error:', error);
+      Alert.alert('Download Failed', error?.message || 'Unable to download exam. Make sure the file was uploaded.');
     } finally {
       setDownloadingExamId(null);
     }
