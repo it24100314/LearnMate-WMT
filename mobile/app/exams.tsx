@@ -268,29 +268,42 @@ export default function ExamsScreen() {
                   <View style={styles.answerSheetFile}>
                     <Text style={styles.answerSheetLabel}>📄 Your Answer Sheet</Text>
                     
-                    {/* Download Button */}
-                    <TouchableOpacity
-                      style={styles.fileButton}
-                      onPress={() => downloadAnswerSheet(submission)}
-                      disabled={downloadingAnswerId === submission._id}
-                    >
-                      <Text style={styles.fileButtonText}>
-                        {downloadingAnswerId === submission._id ? 'Downloading...' : '📥 Download'}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {/* Delete Button (only if deadline hasn't passed) */}
-                    {!calculateDeadlineStatus(item.deadline).isOverdue && (
+                    <View style={styles.buttonRow}>
+                      {/* Download Button */}
                       <TouchableOpacity
-                        style={[styles.fileButton, styles.deleteButton]}
-                        onPress={() => deleteAnswerSheet(item._id, submission._id)}
-                        disabled={deletingAnswerId === submission._id}
+                        style={[styles.fileButton, styles.downloadBtn]}
+                        onPress={() => downloadAnswerSheet(submission)}
+                        disabled={downloadingAnswerId === submission._id}
                       >
-                        <Text style={styles.deleteButtonText}>
-                          {deletingAnswerId === submission._id ? 'Deleting...' : '🗑️ Delete & Re-upload'}
+                        <Text style={styles.fileButtonText}>
+                          {downloadingAnswerId === submission._id ? '📥' : '📥'}
                         </Text>
                       </TouchableOpacity>
-                    )}
+
+                      {/* Delete Button (only if deadline hasn't passed) */}
+                      {!calculateDeadlineStatus(item.deadline).isOverdue && (
+                        <TouchableOpacity
+                          style={[styles.fileButton, styles.deleteBtn]}
+                          onPress={() => deleteAnswerSheet(item._id, submission._id)}
+                          disabled={deletingAnswerId === submission._id}
+                        >
+                          <Text style={styles.fileButtonText}>
+                            {deletingAnswerId === submission._id ? '🗑️' : '🗑️'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Re-upload Button */}
+                      <TouchableOpacity
+                        style={[styles.fileButton, styles.uploadBtn]}
+                        onPress={() => uploadAnswer(item._id)}
+                        disabled={uploadingExamId === item._id}
+                      >
+                        <Text style={styles.fileButtonText}>
+                          {uploadingExamId === item._id ? '⏳' : '📤'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 )}
               </View>
@@ -307,6 +320,18 @@ export default function ExamsScreen() {
                 </Text>
               </TouchableOpacity>
             ) : null}
+
+            {role === 'STUDENT' && !submission?.filePath && (
+              <TouchableOpacity
+                style={[styles.secondaryButton, styles.uploadButton]}
+                onPress={() => uploadAnswer(item._id)}
+                disabled={uploadingExamId === item._id}
+              >
+                <Text style={styles.uploadButtonText}>
+                  {uploadingExamId === item._id ? 'Uploading...' : '📤 Upload Answer Sheet'}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {role === 'TEACHER' && (
               <TouchableOpacity
@@ -480,26 +505,38 @@ const styles = StyleSheet.create({
     color: '#1d4ed8',
     marginBottom: 8,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   fileButton: {
-    backgroundColor: '#2563eb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    flex: 1,
+    paddingVertical: 10,
     borderRadius: 6,
-    marginBottom: 6,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  fileButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 12,
+  downloadBtn: {
+    backgroundColor: '#2563eb',
   },
-  deleteButton: {
+  deleteBtn: {
     backgroundColor: '#EF4444',
   },
-  deleteButtonText: {
+  uploadBtn: {
+    backgroundColor: '#10b981',
+  },
+  fileButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  uploadButton: {
+    marginTop: 8,
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  uploadButtonText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 12,
   },
   empty: {
     color: '#6b7280',

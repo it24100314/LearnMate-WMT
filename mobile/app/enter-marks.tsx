@@ -80,8 +80,8 @@ export default function EnterMarksScreen() {
   const fetchAnswerSheets = async (examId: string) => {
     try {
       // Fetch answer sheets for the selected exam
-      const reviewRes = await api.get(`/exams/review/${examId}`);
-      const { answerSheets } = reviewRes.data;
+      const reviewRes = await api.get(`/exams/review-answers/${examId}`);
+      const answerSheets = reviewRes.data || [];
 
       const submissionsMap: Record<string, AnswerSheet> = {};
       answerSheets?.forEach((sheet: AnswerSheet) => {
@@ -91,8 +91,8 @@ export default function EnterMarksScreen() {
       });
 
       setSubmissions(submissionsMap);
-    } catch (err) {
-      console.error('Error fetching submissions:', err);
+    } catch (err: any) {
+      console.error('Error fetching submissions:', err?.response?.status, err?.message);
       setSubmissions({});
     }
   };
