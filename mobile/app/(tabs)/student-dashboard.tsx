@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../../utils/api';
+import { handleApiError } from '../../utils/auth';
 
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const [stats, setStats] = useState({
@@ -19,6 +21,7 @@ export default function StudentDashboard() {
 
   const fetchData = async () => {
     try {
+      setError(null);
       const [examsRes, marksRes, notificationsRes] = await Promise.all([
         api.get('/exams/list'),
         api.get('/marks'),
@@ -30,17 +33,46 @@ export default function StudentDashboard() {
         marksCount: marksRes.data?.marks?.length ?? 0,
         notificationsCount: notificationsRes.data?.unreadNotificationCount ?? 0,
       });
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      
+      // Check if it's an auth error
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        await handleApiError(error, router, 'Your session has expired');
+        return;
+      }
+      
+      // For other errors, show a message
+      const errorMessage = error?.response?.data?.message || 'Failed to load dashboard. Please try again.';
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  const onRetry = () => {
+    setLoading(true);
+    fetchData();
+  };;
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>⚠️</Text>
+        <Text style={styles.errorTitle}>Unable to Load Dashboard</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -193,5 +225,34 @@ const styles = StyleSheet.create({
   statValue: {
     color: '#1d4ed8',
     fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 60,
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#d32f2f',
+    marginBottom: 10,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

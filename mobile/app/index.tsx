@@ -15,6 +15,11 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Validation Error', 'Please enter both username and password');
+      return;
+    }
+
     try {
       const response = await api.post('/auth/login', { username, password });
       
@@ -28,14 +33,15 @@ export default function LoginScreen() {
         } else if (response.data.role === 'TEACHER') {
           router.replace('/(tabs)/teacher-dashboard');
         } else if (response.data.role === 'PARENT') {
-          router.replace('/parent-dashboard');
-        } else {
-          router.replace('/admin-dashboard');
+          router.replace('/(tabs)/parent-dashboard');
+        } else if (response.data.role === 'ADMIN') {
+          router.replace('/(tabs)/admin-dashboard');
         }
       }
     } catch (error: unknown) {
       const axiosError = error as AxiosError<ApiError>;
-      Alert.alert('Login Failed', axiosError.response?.data?.message || 'Something went wrong');
+      const errorMessage = axiosError.response?.data?.message || 'Login failed. Please check your credentials and try again.';
+      Alert.alert('Login Failed', errorMessage);
     }
   };
 

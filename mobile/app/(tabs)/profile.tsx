@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import api from '../../utils/api';
+import { logout } from '../../utils/auth';
 
 type UserProfile = {
   _id: string;
@@ -46,6 +47,13 @@ export default function ProfileScreen() {
       setProfile(response.data);
     } catch (err: any) {
       console.error('Profile fetch failed:', err);
+      
+      // Check if it's an auth error
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        await logout(router, 'Your session has expired. Please log in again.');
+        return;
+      }
+      
       setError(err?.response?.data?.message || err.message || 'Unable to load profile data.');
     } finally {
       setLoading(false);
@@ -58,15 +66,7 @@ export default function ProfileScreen() {
       {
         text: 'Logout',
         onPress: async () => {
-          try {
-            await SecureStore.deleteItemAsync('authToken');
-            await SecureStore.deleteItemAsync('userRole');
-            await SecureStore.deleteItemAsync('userId');
-
-            router.replace('/');
-          } catch {
-            Alert.alert('Error', 'Something went wrong during logout.');
-          }
+          await logout(router, '');
         },
         style: 'destructive',
       },

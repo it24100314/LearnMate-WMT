@@ -1,12 +1,79 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { useRouter, useSegments } from 'expo-router';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import api from '@/utils/api';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        
+        if (token) {
+          // Token exists, verify it's still valid
+          try {
+            const response = await api.get('/users/me');
+            
+            if (response.status === 200) {
+              // Token is valid
+              setIsTokenValid(true);
+              setIsLoading(false);
+              return;
+            }
+          } catch (error: any) {
+            // Token is invalid (401, 404, 500, etc.)
+            console.error('Token validation failed:', error.status);
+          }
+        }
+        
+        // No token or token is invalid - clear storage
+        await SecureStore.deleteItemAsync('userToken');
+        await SecureStore.deleteItemAsync('userRole');
+        await SecureStore.deleteItemAsync('userId');
+        
+        setIsTokenValid(false);
+        setIsLoading(false);
+        
+        // Ensure user is on login screen
+        if (segments[0] !== undefined && segments[0] !== 'index') {
+          router.replace('/');
+        }
+      } catch (err) {
+        console.error('Error verifying token:', err);
+        // Clear storage on any error
+        await SecureStore.deleteItemAsync('userToken');
+        await SecureStore.deleteItemAsync('userRole');
+        await SecureStore.deleteItemAsync('userId');
+        
+        setIsTokenValid(false);
+        setIsLoading(false);
+        router.replace('/');
+      }
+    };
+
+    verifyToken();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

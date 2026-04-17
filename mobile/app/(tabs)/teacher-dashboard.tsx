@@ -1,9 +1,55 @@
-import React from 'react';
-import { ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import api from '../../utils/api';
+import { handleApiError } from '../../utils/auth';
 
 export default function TeacherDashboard() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    verifyAuth();
+  }, []);
+
+  const verifyAuth = async () => {
+    try {
+      setError(null);
+      // Quick auth verification
+      await api.get('/users/me');
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Auth verification failed:', err);
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        await handleApiError(err, router, 'Your session has expired');
+        return;
+      }
+      setError('Failed to verify session. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>⚠️</Text>
+        <Text style={styles.errorTitle}>Session Error</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={verifyAuth}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -48,11 +94,17 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 30,
-    marginTop: 40,
+    marginTop: 20,
   },
   card: {
     backgroundColor: '#fff',
@@ -74,5 +126,34 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     color: '#666',
-  }
+  },
+  errorText: {
+    fontSize: 60,
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#d32f2f',
+    marginBottom: 10,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
