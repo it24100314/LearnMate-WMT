@@ -5,6 +5,8 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
 });
 
 api.interceptors.request.use(
@@ -13,6 +15,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    
+    // For FormData, let axios set the Content-Type with proper boundary
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data';
+    }
+    
     return config;
   },
   (error) => {

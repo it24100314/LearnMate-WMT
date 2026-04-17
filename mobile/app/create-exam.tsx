@@ -168,6 +168,7 @@ export default function CreateExamScreen() {
         } as any);
       }
 
+      console.log('Creating exam with file:', selectedFile?.name);
       await api.post('/exams/create', formData);
 
       Alert.alert('Success', 'Exam created successfully!');
@@ -180,7 +181,8 @@ export default function CreateExamScreen() {
       setClassId('');
       setSelectedFile(null);
     } catch (error: any) {
-      Alert.alert('Creation Failed', error?.response?.data?.message || 'There was an issue creating the exam.');
+      console.error('Exam creation error:', error?.response?.status, error?.response?.data, error?.message);
+      Alert.alert('Creation Failed', error?.response?.data?.message || error?.message || 'There was an issue creating the exam.');
     } finally {
       setSaving(false);
     }

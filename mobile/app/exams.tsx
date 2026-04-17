@@ -119,6 +119,7 @@ export default function ExamsScreen() {
         type: file.mimeType || 'application/pdf',
       } as unknown as Blob);
 
+      console.log('Uploading answer sheet:', file.name, 'for exam:', examId);
       const response = await api.post(`/exams/upload-answer/${examId}`, formData);
 
       if (response.data?.answerSheet) {
@@ -130,7 +131,8 @@ export default function ExamsScreen() {
 
       Alert.alert('Success', 'Answer sheet uploaded successfully!');
     } catch (error: any) {
-      Alert.alert('Upload Failed', error?.response?.data?.message || 'Failed to upload answer sheet');
+      console.error('Answer upload error:', error?.response?.status, error?.response?.data, error?.message);
+      Alert.alert('Upload Failed', error?.response?.data?.message || error?.message || 'Failed to upload answer sheet');
     } finally {
       setUploadingExamId(null);
     }

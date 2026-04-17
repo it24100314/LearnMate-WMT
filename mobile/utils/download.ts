@@ -41,14 +41,20 @@ export const downloadAndShareApiFile = async ({ endpoint, fileName, dialogTitle 
   const safeFileName = sanitizeFileName(fileName);
   const localFileUri = `${downloadsDir}/${Date.now()}_${safeFileName}`;
 
+  console.log('Download start:', { endpoint, localFileUri });
+  
   const result = await FileSystem.downloadAsync(toAbsoluteApiUrl(endpoint), localFileUri, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 
+  console.log('Download result:', result);
+
   if (!result || (result.status && result.status >= 400)) {
-    throw new Error(`Download failed with status ${result?.status ?? 'unknown'}`);
+    const errMsg = `Download failed with status ${result?.status ?? 'unknown'}`;
+    console.error(errMsg);
+    throw new Error(errMsg);
   }
 
   const canShare = await Sharing.isAvailableAsync();

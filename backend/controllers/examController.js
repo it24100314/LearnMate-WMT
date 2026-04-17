@@ -157,6 +157,11 @@ const listExams = async (req, res) => {
 
 const createExam = async (req, res) => {
   try {
+    console.log('Create exam request:', { 
+      file: req.file?.filename, 
+      body: { title: req.body.title, subjectId: req.body.subjectId, schoolClassId: req.body.schoolClassId }
+    });
+
     const subjectId = req.body.subjectId || req.body.subject;
     const schoolClassId = req.body.schoolClassId || req.body.schoolClass || req.body.classId;
     const deadline = parseIsoDate(req.body.deadline || req.body.date);
@@ -205,6 +210,8 @@ const createExam = async (req, res) => {
       filePath: req.file?.filename || null,
     });
 
+    console.log('Exam created:', { examId: exam._id, filePath: exam.filePath });
+
     // Automatically trigger notification to all students in the class
     await notificationService.createNotificationForNewExam({
       ...exam.toObject(),
@@ -214,6 +221,7 @@ const createExam = async (req, res) => {
     const hydrated = await hydrateExams(Exam.findById(exam._id));
     res.status(201).json({ message: 'Exam created successfully!', exam: serializeExam(hydrated) });
   } catch (error) {
+    console.error('Create exam error:', error);
     res.status(500).json({ message: `Failed to create exam: ${error.message}` });
   }
 };
@@ -352,12 +360,15 @@ const downloadExam = async (req, res) => {
 
 const uploadAnswer = async (req, res) => {
   try {
+    console.log('Upload answer sheet:', { examId: req.params.id, studentId: req.user.id, file: req.file?.filename });
+
     const exam = await hydrateExams(Exam.findById(req.params.id));
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
     if (!req.file) {
+      console.log('Upload answer sheet: No file received');
       return res.status(400).json({ message: 'Please select a file to upload!' });
     }
 
@@ -393,9 +404,12 @@ const uploadAnswer = async (req, res) => {
       await answerSheet.save();
     }
 
+    console.log('Answer sheet saved:', { answerSheetId: answerSheet._id, filePath: answerSheet.filePath });
+
     const hydrated = await hydrateAnswerSheets(AnswerSheet.findById(answerSheet._id));
     res.json({ message: 'Answer sheet uploaded successfully!', answerSheet: serializeAnswerSheet(hydrated) });
   } catch (error) {
+    console.error('Upload answer sheet error:', error);
     res.status(500).json({ message: `Failed to upload answer sheet: ${error.message}` });
   }
 };
