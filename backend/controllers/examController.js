@@ -136,7 +136,7 @@ const listExams = async (req, res) => {
       } else {
         const subjectIds = (req.currentUser.subjects || []).map((id) => String(id));
         const classExams = await hydrateExams(
-          Exam.find({ schoolClass: req.currentUser.schoolClass }).sort({ deadline: -1 })
+          Exam.find({ schoolClass: req.currentUser.schoolClass._id || req.currentUser.schoolClass }).sort({ deadline: -1 })
         );
         exams = classExams.filter((exam) => subjectIds.includes(String(exam.subject?._id)));
       }
@@ -356,7 +356,7 @@ const uploadAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Please select a file to upload!' });
     }
 
-    const student = req.currentUser;
+    const student = req.user;
     const subjectIds = (student.subjects || []).map((id) => String(id));
     const enrolledInSubject = subjectIds.includes(String(exam.subject?._id));
     const sameClass = String(student.schoolClass || '') === String(exam.schoolClass?._id || exam.schoolClass);
