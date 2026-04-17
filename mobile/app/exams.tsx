@@ -275,9 +275,7 @@ export default function ExamsScreen() {
                         onPress={() => downloadAnswerSheet(submission)}
                         disabled={downloadingAnswerId === submission._id}
                       >
-                        <Text style={styles.fileButtonText}>
-                          {downloadingAnswerId === submission._id ? '📥' : '📥'}
-                        </Text>
+                        <Text style={styles.fileButtonText}>📥</Text>
                       </TouchableOpacity>
 
                       {/* Delete Button (only if deadline hasn't passed) */}
@@ -287,22 +285,9 @@ export default function ExamsScreen() {
                           onPress={() => deleteAnswerSheet(item._id, submission._id)}
                           disabled={deletingAnswerId === submission._id}
                         >
-                          <Text style={styles.fileButtonText}>
-                            {deletingAnswerId === submission._id ? '🗑️' : '🗑️'}
-                          </Text>
+                          <Text style={styles.fileButtonText}>🗑️</Text>
                         </TouchableOpacity>
                       )}
-
-                      {/* Re-upload Button */}
-                      <TouchableOpacity
-                        style={[styles.fileButton, styles.uploadBtn]}
-                        onPress={() => uploadAnswer(item._id)}
-                        disabled={uploadingExamId === item._id}
-                      >
-                        <Text style={styles.fileButtonText}>
-                          {uploadingExamId === item._id ? '⏳' : '📤'}
-                        </Text>
-                      </TouchableOpacity>
                     </View>
                   </View>
                 )}
@@ -497,9 +482,6 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     backgroundColor: '#EF4444',
-  },
-  uploadBtn: {
-    backgroundColor: '#10b981',
   },
   fileButtonText: {
     fontSize: 18,
