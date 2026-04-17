@@ -650,7 +650,7 @@ const editMark = async (req, res) => {
 const deleteAnswerSheet = async (req, res) => {
   try {
     const answerSheetId = req.params.id;
-    console.log('Delete answer sheet:', answerSheetId, 'User:', req.user.id);
+    console.log('Delete answer sheet:', answerSheetId, 'User:', req.currentUser._id);
     
     const answerSheet = await AnswerSheet.findById(answerSheetId);
 
@@ -660,8 +660,9 @@ const deleteAnswerSheet = async (req, res) => {
     }
 
     // Verify the current user is the student who submitted this answer sheet
-    if (answerSheet.student.toString() !== req.user.id) {
-      console.log('Delete: Not student owner', answerSheet.student, '!==', req.user.id);
+    console.log('Comparing:', String(answerSheet.student), 'with', String(req.currentUser._id));
+    if (String(answerSheet.student) !== String(req.currentUser._id)) {
+      console.log('Delete: Not student owner', String(answerSheet.student), '!==', String(req.currentUser._id));
       return res.status(403).json({ message: 'You can only delete your own answer sheets' });
     }
 

@@ -65,9 +65,9 @@ export default function TeacherDashboard() {
         <Text style={styles.cardDesc}>View your schedule and add new sessions</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/create-exam')}>
-        <Text style={styles.cardTitle}>Create Exam</Text>
-        <Text style={styles.cardDesc}>Schedule and manage exams for your subjects</Text>
+      <TouchableOpacity style={styles.card} onPress={() => router.push('/exams-hub')}>
+        <Text style={styles.cardTitle}>Exams</Text>
+        <Text style={styles.cardDesc}>Create and manage exams for your subjects</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.card} onPress={() => router.push('/mark-attendance')}>
