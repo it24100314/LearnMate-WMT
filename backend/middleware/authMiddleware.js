@@ -9,11 +9,12 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
 
       const user = await User.findById(decoded.id)
-        .select('_id username name role active schoolClass subjects children parents')
+        .select('-password')
         .populate('schoolClass', 'name')
         .populate('subjects', 'name')
         .populate('children', '_id name username role schoolClass')
-        .populate('parents', '_id name username role');
+        .populate('parents', '_id name username role')
+        .populate('assignedClasses', 'name');
 
       if (!user) {
         return res.status(401).json({ message: 'Not authorized, user no longer exists' });
@@ -31,6 +32,7 @@ const protect = async (req, res, next) => {
       req.currentUser = user;
       next();
     } catch (error) {
+      console.error('Auth error:', error.message);
       return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }

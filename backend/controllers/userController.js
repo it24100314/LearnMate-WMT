@@ -39,6 +39,31 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  try {
+    // req.currentUser is already populated by auth middleware
+    if (!req.currentUser) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    res.json({
+      _id: req.currentUser._id,
+      username: req.currentUser.username,
+      name: req.currentUser.name,
+      email: req.currentUser.email,
+      role: req.currentUser.role,
+      active: req.currentUser.active,
+      schoolClass: req.currentUser.schoolClass,
+      subjects: req.currentUser.subjects,
+      children: req.currentUser.children,
+      parents: req.currentUser.parents,
+      assignedClasses: req.currentUser.assignedClasses
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getTeacherAssignments = async (req, res) => {
   try {
     const teacher = await User.findById(req.user.id).populate('assignedClasses').populate('subjects');
@@ -60,4 +85,4 @@ const getTeacherAssignments = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserById, updateUser, deleteUser, getTeacherAssignments };
+module.exports = { getUsers, getUserById, updateUser, deleteUser, getMe, getTeacherAssignments };
