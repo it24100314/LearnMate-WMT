@@ -10,18 +10,18 @@ type ApiError = {
 };
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Validation Error', 'Please enter both username and password');
+    if (!identifier || !password) {
+      Alert.alert('Validation Error', 'Please enter both username/email and password');
       return;
     }
 
     try {
-      const response = await api.post('/auth/login', { username, password });
+      const response = await api.post('/auth/login', { identifier, password });
       
       if (response.data.token) {
         await SecureStore.setItemAsync('userToken', response.data.token);
@@ -51,9 +51,9 @@ export default function LoginScreen() {
       
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Username or Email"
+        value={identifier}
+        onChangeText={setIdentifier}
         autoCapitalize="none"
       />
       

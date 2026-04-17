@@ -236,16 +236,22 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required.' });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Username/Email and password are required.' });
     }
 
-    const user = await User.findOne({ username });
+    // Accept both email and username
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid username or password.' });
+      return res.status(401).json({ message: 'Invalid username/email or password.' });
     }
 
     if (!user.active) {
