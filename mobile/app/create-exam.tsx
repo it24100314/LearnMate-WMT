@@ -10,7 +10,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import FormData from 'form-data';
 import api from '../utils/api';
@@ -62,15 +62,30 @@ export default function CreateExamScreen() {
   };
 
   const handleDeadlineChange = (event: any, selectedDate?: Date) => {
-    // Android: Close picker immediately to prevent modal dismiss crash
-    setShowDeadlinePicker(Platform.OS === 'ios');
+    // iOS: Use declarative component handler
+    setShowDeadlinePicker(false);
     
-    // Only process if user pressed "OK" (event.type === 'set')
     if (event.type === 'set' && selectedDate) {
-      // Defer state update to ensure native modal is fully dismissed
-      setTimeout(() => {
-        setDeadline(selectedDate);
-      }, 0);
+      setDeadline(selectedDate);
+    }
+  };
+
+  const showDatepicker = () => {
+    // Android: Use imperative API (modal-based, no dismiss issues)
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: deadline || new Date(),
+        onChange: (event, selectedDate) => {
+          // Android handles Cancel natively - no crash on dismiss
+          if (event.type === 'set' && selectedDate) {
+            setDeadline(selectedDate);
+          }
+        },
+        mode: 'datetime',
+      });
+    } else {
+      // iOS: Render component
+      setShowDeadlinePicker(true);
     }
   };
 
@@ -216,16 +231,16 @@ export default function CreateExamScreen() {
       <Text style={styles.label}>Deadline (Date & Time) *</Text>
       <TouchableOpacity
         style={styles.datePickerButton}
-        onPress={() => setShowDeadlinePicker(true)}
+        onPress={showDatepicker}
       >
         <Text style={styles.datePickerText}>{formatDateTimeForDisplay(deadline)}</Text>
       </TouchableOpacity>
 
-      {showDeadlinePicker && (
+      {showDeadlinePicker && Platform.OS === 'ios' && (
         <DateTimePicker
           value={deadline}
           mode="datetime"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display="spinner"
           onChange={handleDeadlineChange}
           onDismiss={() => setShowDeadlinePicker(false)}
         />
