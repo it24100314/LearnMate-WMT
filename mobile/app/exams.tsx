@@ -168,6 +168,7 @@ export default function ExamsScreen() {
 
   return (
     <FlatList
+      style={{ backgroundColor: '#f9fafb', flex: 1 }}
       data={exams}
       keyExtractor={(item) => item._id}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadExams(); }} />}
