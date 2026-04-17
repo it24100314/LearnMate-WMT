@@ -81,14 +81,16 @@ export default function EnterMarksScreen() {
     try {
       // Fetch answer sheets for the selected exam
       const reviewRes = await api.get(`/exams/review-answers/${examId}`);
-      const answerSheets = reviewRes.data || [];
+      const answerSheets = reviewRes.data?.answerSheets || [];
 
       const submissionsMap: Record<string, AnswerSheet> = {};
-      answerSheets?.forEach((sheet: AnswerSheet) => {
-        if (sheet.student?._id) {
-          submissionsMap[sheet.student._id] = sheet;
-        }
-      });
+      if (Array.isArray(answerSheets)) {
+        answerSheets.forEach((sheet: AnswerSheet) => {
+          if (sheet.student?._id) {
+            submissionsMap[String(sheet.student._id)] = sheet;
+          }
+        });
+      }
 
       setSubmissions(submissionsMap);
     } catch (err: any) {

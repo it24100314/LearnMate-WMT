@@ -341,30 +341,6 @@ export default function ExamsScreen() {
                 <Text style={styles.gradeButtonText}>📋 Grade Submissions</Text>
               </TouchableOpacity>
             )}
-
-            {role === 'STUDENT' && !submission ? (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => uploadAnswer(item._id)}
-                disabled={uploadingExamId === item._id}
-              >
-                <Text style={styles.buttonText}>
-                  {uploadingExamId === item._id ? 'Uploading...' : '📤 Upload Answer Sheet'}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-
-            {role === 'STUDENT' && submission && (
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
-                onPress={() => uploadAnswer(item._id)}
-                disabled={uploadingExamId === item._id}
-              >
-                <Text style={styles.buttonSecondaryText}>
-                  {uploadingExamId === item._id ? 'Uploading...' : '🔄 Re-upload Answer Sheet'}
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
         );
       }}
