@@ -14,8 +14,6 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="register" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="admin-dashboard" options={{ headerShown: true, title: 'Admin Dashboard' }} />
-        <Stack.Screen name="parent-dashboard" options={{ headerShown: true, title: 'Parent Dashboard' }} />
         <Stack.Screen name="attendance" options={{ headerShown: true, title: 'Attendance' }} />
         <Stack.Screen name="materials" options={{ headerShown: true, title: 'Materials' }} />
         <Stack.Screen name="exams" options={{ headerShown: true, title: 'Exams' }} />
@@ -23,6 +21,12 @@ export default function RootLayout() {
         <Stack.Screen name="fees" options={{ headerShown: true, title: 'Fees' }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
         <Stack.Screen name="manage-notifications" options={{ headerShown: true, title: 'Manage Notifications' }} />
+        <Stack.Screen name="create-exam" options={{ headerShown: true, title: 'Create Exam' }} />
+        <Stack.Screen name="grade-submissions" options={{ headerShown: true, title: 'Grade Submissions' }} />
+        <Stack.Screen name="enter-marks" options={{ headerShown: true, title: 'Enter Marks' }} />
+        <Stack.Screen name="mark-attendance" options={{ headerShown: true, title: 'Mark Attendance' }} />
+        <Stack.Screen name="upload-materials" options={{ headerShown: true, title: 'Upload Materials' }} />
+        <Stack.Screen name="manage-timetable" options={{ headerShown: true, title: 'Manage Timetable' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

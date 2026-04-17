@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   submissionStatus: {
     marginTop: 10,
     backgroundColor: '#ECFDF5',
-    borderLeft: 3,
+    borderLeftWidth: 3,
     borderLeftColor: '#10B981',
     padding: 10,
     borderRadius: 6,
