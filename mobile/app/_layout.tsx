@@ -13,7 +13,6 @@ import api from '@/utils/api';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [isLoading, setIsLoading] = useState(true);
-  const [isTokenValid, setIsTokenValid] = useState(false);
   const router = useRouter();
   const segments = useSegments();
 
@@ -29,13 +28,16 @@ export default function RootLayout() {
             
             if (response.status === 200) {
               // Token is valid
-              setIsTokenValid(true);
               setIsLoading(false);
               return;
             }
           } catch (error: any) {
-            // Token is invalid (401, 404, 500, etc.)
-            console.error('Token validation failed:', error.status);
+            // 401/403 are expected when a stored token is stale.
+            // Avoid console.error here because React Native surfaces it in LogBox.
+            const status = error?.response?.status;
+            if (status !== 401 && status !== 403) {
+              console.error('Token validation failed unexpectedly:', status ?? error?.message ?? error);
+            }
           }
         }
         
@@ -44,7 +46,6 @@ export default function RootLayout() {
         await SecureStore.deleteItemAsync('userRole');
         await SecureStore.deleteItemAsync('userId');
         
-        setIsTokenValid(false);
         setIsLoading(false);
         
         // Ensure user is on login screen
@@ -58,7 +59,6 @@ export default function RootLayout() {
         await SecureStore.deleteItemAsync('userRole');
         await SecureStore.deleteItemAsync('userId');
         
-        setIsTokenValid(false);
         setIsLoading(false);
         router.replace('/');
       }
