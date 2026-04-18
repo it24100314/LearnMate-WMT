@@ -8,7 +8,7 @@ const {
   deleteFee,
   verifyFee,
   searchFees,
-  parentPay,
+  studentPay,
   createSubjectFee,
 } = require('../controllers/feeController');
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -20,16 +20,16 @@ const paymentSlipUpload = buildUploader('payment-slips', {
 
 router.use(protect);
 
-router.get('/list', authorize('PARENT', 'ADMIN'), listFees);
+router.get('/list', authorize('STUDENT', 'ADMIN'), listFees);
 router.get('/options', authorize('ADMIN'), getFeeOptions);
-router.get('/search', authorize('ADMIN', 'PARENT'), searchFees);
+router.get('/search', authorize('ADMIN', 'STUDENT'), searchFees);
 
 router.post('/create', authorize('ADMIN'), createFee);
 router.put('/edit/:id', authorize('ADMIN'), updateFee);
 router.delete('/delete/:id', authorize('ADMIN'), deleteFee);
 router.post('/verify/:id', authorize('ADMIN'), verifyFee);
 
-router.post('/parent-pay', authorize('PARENT'), paymentSlipUpload, parentPay);
+router.post('/student-pay', authorize('STUDENT'), paymentSlipUpload, studentPay);
 router.post('/create-subject-fee', authorize('ADMIN'), createSubjectFee);
 
 module.exports = router;

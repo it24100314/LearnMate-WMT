@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
 
@@ -54,12 +55,12 @@ export default function StudentDashboard() {
   const onRetry = () => {
     setLoading(true);
     fetchData();
-  };;
+  };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -67,7 +68,7 @@ export default function StudentDashboard() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>⚠️</Text>
+        <Ionicons name="alert-circle-outline" size={48} color="#ff5252" style={styles.errorIcon} />
         <Text style={styles.errorTitle}>Unable to Load Dashboard</Text>
         <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
@@ -79,40 +80,50 @@ export default function StudentDashboard() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.headerSection}>
+      <View style={styles.heroCard}>
         <Text style={styles.pageTitle}>Student Dashboard</Text>
-        <Text style={styles.subText}>Access your exams, results, materials, and notifications.</Text>
+        <Text style={styles.subText}>Access your exams, timetable, attendance, and study resources.</Text>
       </View>
 
       <View style={styles.tileGrid}>
         <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/exams' as any)}>
-          <Text style={styles.tileIcon}>📝</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name="document-text-outline" size={28} color="#3f51b5" />
+          </View>
           <Text style={styles.tileTitle}>Exams</Text>
-          <Text style={styles.tileDesc}>View upcoming exams and upload answers.</Text>
+          <Text style={styles.tileDesc}>Upcoming exams and answer uploads.</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/timetable' as any)}>
-          <Text style={styles.tileIcon}>📅</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name="calendar-outline" size={28} color="#3f51b5" />
+          </View>
           <Text style={styles.tileTitle}>Timetable</Text>
-          <Text style={styles.tileDesc}>View your weekly class schedule.</Text>
+          <Text style={styles.tileDesc}>Your weekly class schedule.</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/attendance' as any)}>
-          <Text style={styles.tileIcon}>✅</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name="checkmark-done-outline" size={28} color="#3f51b5" />
+          </View>
           <Text style={styles.tileTitle}>Attendance</Text>
-          <Text style={styles.tileDesc}>Check your daily attendance records.</Text>
+          <Text style={styles.tileDesc}>Your daily attendance records.</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/materials' as any)}>
-          <Text style={styles.tileIcon}>📚</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name="library-outline" size={28} color="#3f51b5" />
+          </View>
           <Text style={styles.tileTitle}>Study Materials</Text>
-          <Text style={styles.tileDesc}>Browse resources from teachers.</Text>
+          <Text style={styles.tileDesc}>Resources shared by teachers.</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/results' as any)}>
-          <Text style={styles.tileIcon}>📊</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name="bar-chart-outline" size={28} color="#3f51b5" />
+          </View>
           <Text style={styles.tileTitle}>My Results</Text>
-          <Text style={styles.tileDesc}>Track your marks and comments.</Text>
+          <Text style={styles.tileDesc}>Published marks and remarks.</Text>
         </TouchableOpacity>
       </View>
 
@@ -139,33 +150,38 @@ export default function StudentDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
-    padding: 15,
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 24,
   },
-  headerSection: {
-    backgroundColor: '#fff',
+  heroCard: {
+    backgroundColor: '#ffffff',
     padding: 20,
-    borderRadius: 10,
-    marginBottom: 15,
-    marginTop: 35,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    borderRadius: 20,
+    marginBottom: 16,
+    marginTop: 20,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   pageTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1f2937',
   },
   subText: {
-    color: '#6c757d',
-    marginTop: 5,
+    color: '#64748b',
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 20,
   },
   tileGrid: {
     flexDirection: 'row',
@@ -173,85 +189,105 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tileCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     width: '48%',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
-  tileIcon: {
-    fontSize: 28,
-    marginBottom: 10,
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e8edff',
+    marginBottom: 12,
   },
   tileTitle: {
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 6,
+    color: '#1f2937',
   },
   tileDesc: {
     fontSize: 12,
-    color: '#666',
-    minHeight: 40,
+    color: '#64748b',
+    minHeight: 34,
+    lineHeight: 17,
   },
   surfaceCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 20,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginBottom: 15,
-    color: '#333',
+    color: '#1f2937',
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eef1f5',
   },
   statLabel: {
-    color: '#4b5563',
+    color: '#475569',
     fontWeight: '600',
   },
   statValue: {
-    color: '#1d4ed8',
+    color: '#3f51b5',
     fontWeight: '700',
   },
-  errorText: {
-    fontSize: 60,
-    marginBottom: 20,
+  errorIcon: {
+    marginBottom: 14,
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#d32f2f',
+    color: '#ff5252',
     marginBottom: 10,
   },
   errorMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
     textAlign: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3f51b5',
     paddingHorizontal: 30,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 10,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 16,
   },

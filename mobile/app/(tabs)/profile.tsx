@@ -22,7 +22,6 @@ type UserProfile = {
   role: string;
   schoolClass?: { _id: string; name: string };
   subjects?: { _id: string; name: string }[];
-  children?: { _id: string; name: string; schoolClass?: { name: string } }[];
 };
 
 export default function ProfileScreen() {
@@ -76,8 +75,8 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10 }}>Loading Profile...</Text>
+        <ActivityIndicator size="large" color="#3f51b5" />
+        <Text style={styles.loadingText}>Loading Profile...</Text>
       </View>
     );
   }
@@ -104,24 +103,22 @@ export default function ProfileScreen() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return '#FF6B6B';
+        return '#ef5350';
       case 'TEACHER':
-        return '#4ECDC4';
-      case 'PARENT':
-        return '#FFE66D';
+        return '#5c6bc0';
       default:
-        return '#95E1D3';
+        return '#42a5f5';
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      {/* Profile Header */}
       <View style={styles.headerCard}>
         <View style={[styles.avatarCircle, { backgroundColor: getRoleColor(profile.role) }]}>
-          <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.avatarText}>{(profile.name || '?').charAt(0).toUpperCase()}</Text>
         </View>
         <Text style={styles.profileName}>{profile.name}</Text>
+        <Text style={styles.profileSubTitle}>Your academic profile overview</Text>
         <View style={[styles.roleBadge, { backgroundColor: getRoleColor(profile.role) + '20' }]}>
           <Text style={[styles.roleText, { color: getRoleColor(profile.role) }]}>
             {profile.role}
@@ -129,7 +126,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Basic Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basic Information</Text>
 
@@ -167,10 +163,9 @@ export default function ProfileScreen() {
               <View style={styles.subjectsList}>
                 {profile.subjects.map((subject, index) => {
                   const subjectName = subject?.name || 'N/A';
-                  const displayText = subjectName.length > 0 ? subjectName.charAt(0).toUpperCase() : '?';
                   return (
-                    <View key={subject?._id || index} style={styles.subjectBadge}>
-                      <Text style={styles.subjectName}>{displayText}</Text>
+                    <View key={subject?._id || index} style={styles.subjectChip}>
+                      <Text style={styles.subjectChipText}>{subjectName}</Text>
                     </View>
                   );
                 })}
@@ -190,32 +185,13 @@ export default function ProfileScreen() {
             <View style={styles.subjectsList}>
               {profile.subjects.map((subject, index) => {
                 const subjectName = subject?.name || 'N/A';
-                const displayText = subjectName.length > 0 ? subjectName.charAt(0).toUpperCase() : '?';
                 return (
-                  <View key={subject?._id || index} style={[styles.subjectBadge, { backgroundColor: '#E8F5E9' }]}>
-                    <Text style={[styles.subjectName, { color: '#2E7D32' }]}>{displayText}</Text>
+                  <View key={subject?._id || index} style={styles.subjectChip}>
+                    <Text style={styles.subjectChipText}>{subjectName}</Text>
                   </View>
                 );
               })}
             </View>
-          </View>
-        </View>
-      )}
-
-      {/* Parent-Specific Information */}
-      {profile?.role === 'PARENT' && profile?.children && profile.children.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Children</Text>
-
-          <View style={styles.childrenList}>
-            {profile.children.map((child, index) => (
-              <View key={child?._id || index} style={styles.childCard}>
-                <Text style={styles.childName}>{child?.name}</Text>
-                {child?.schoolClass && (
-                  <Text style={styles.childGrade}>{child.schoolClass.name}</Text>
-                )}
-              </View>
-            ))}
           </View>
         </View>
       )}
@@ -237,47 +213,65 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#f8f9fa',
     paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#64748b',
+    fontSize: 14,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fa',
   },
   headerCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#ffffff',
     padding: 24,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#e8edff',
   },
   avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#ffffff',
   },
   profileName: {
     fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#000',
+    fontWeight: '800',
+    marginBottom: 4,
+    color: '#1f2937',
+  },
+  profileSubTitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 10,
   },
   roleBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
   },
   roleText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   section: {
     marginTop: 16,
@@ -285,100 +279,96 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     marginBottom: 12,
-    color: '#333',
+    color: '#1f2937',
   },
   infoCard: {
-    backgroundColor: '#FFF',
-    padding: 14,
-    marginBottom: 10,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    backgroundColor: '#ffffff',
+    padding: 15,
+    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   infoLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#999',
+    fontWeight: '700',
+    color: '#64748b',
     marginBottom: 4,
     textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   infoValue: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: '#1f2937',
   },
   subjectsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 8,
-    gap: 8,
+    gap: 10,
   },
-  subjectBadge: {
-    backgroundColor: '#E8F4FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  subjectChip: {
+    backgroundColor: '#e8edff',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#cfd8ff',
   },
-  subjectName: {
+  subjectChipText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  childrenList: {
-    gap: 8,
-  },
-  childCard: {
-    backgroundColor: '#FFF',
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#FFE66D',
-  },
-  childName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  childGrade: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    fontWeight: '700',
+    color: '#1f3d99',
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 12,
+    backgroundColor: '#ff5252',
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     marginHorizontal: 0,
     marginTop: 16,
     marginBottom: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   logoutText: {
-    color: '#FFF',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   errorText: {
     fontSize: 16,
-    color: '#FF6B6B',
+    color: '#ff5252',
     textAlign: 'center',
     marginBottom: 12,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3f51b5',
     paddingVertical: 10,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 12,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   retryButtonText: {
-    color: '#FFF',
+    color: '#ffffff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

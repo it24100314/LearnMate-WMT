@@ -4,8 +4,7 @@ const {
   getDashboard,
   getAdminDashboard,
   getTeacherDashboard,
-  getStudentDashboard,
-  getParentDashboard
+  getStudentDashboard
 } = require('../controllers/dashboardController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -18,7 +17,6 @@ router.get('/', getDashboard);
 router.get('/admin', getAdminDashboard);
 router.get('/teacher', getTeacherDashboard);
 router.get('/student', getStudentDashboard);
-router.get('/parent', getParentDashboard);
 
 module.exports = router;
 

@@ -57,7 +57,7 @@ const seedDatabase = async () => {
     ]);
     console.log(`✓ ${classes.length} School Classes created`);
 
-    // 3. Create 4 Core Users (ADMIN, TEACHER, STUDENT, PARENT)
+    // 3. Create 3 Core Users (ADMIN, TEACHER, STUDENT)
     // NOTE: Passwords are PLAIN TEXT here. The User.js pre('save') hook will hash them.
     const admin = await User.create({
       username: 'admin@',
@@ -93,22 +93,7 @@ const seedDatabase = async () => {
     });
     console.log('✓ STUDENT user created: student@');
 
-    const parent = await User.create({
-      username: 'parent@',
-      email: 'parent@learnmate.com',
-      password: 'Parent@123',
-      name: 'Sarah Johnson',
-      role: 'PARENT',
-      active: true,
-      children: [student._id]
-    });
-    console.log('✓ PARENT user created: parent@');
-
-    // Update student to reference parent
-    student.parents.push(parent._id);
-    await student.save();
-
-    console.log('✓ Parent-Student relationship established\n');
+    console.log('✓ Core users created\n');
 
     // 4. Create sample Timetable entries
     const timetableExamples = await Timetable.insertMany([
@@ -179,12 +164,9 @@ const seedDatabase = async () => {
     console.log('ADMIN:    admin@        / Admin@123');
     console.log('TEACHER:  teacher@      / Teacher@123');
     console.log('STUDENT:  student@      / Student@123');
-    console.log('PARENT:   parent@       / Parent@123');
     console.log('─'.repeat(50));
     console.log('\nRelationships:');
-    console.log('- Student "Alice Johnson" is linked to Parent "Sarah Johnson"');
     console.log('- Teacher "John Smith" teaches Science and Mathematics in Grade 10 & 11');
-    console.log('- Parent can view student\'s timetable, attendance, marks, and fees');
     console.log('='.repeat(50) + '\n');
 
     process.exit(0);

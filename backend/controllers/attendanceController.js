@@ -112,7 +112,7 @@ const resolveClassOptions = async (currentUser) => {
     return SchoolClass.find().sort({ name: 1 });
   }
 
-  if (currentUser.role === 'ADMIN' || currentUser.role === 'PARENT') {
+  if (currentUser.role === 'ADMIN') {
     return SchoolClass.find().sort({ name: 1 });
   }
 

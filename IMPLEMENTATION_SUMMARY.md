@@ -20,9 +20,7 @@ Implemented complete Communication and Announcement module with automated trigge
 
 - **createNotificationForMarksReleased(student, marksInfo)**
   - Automatically triggered when teacher releases marks for a student
-  - Creates TWO notifications:
-    1. For the STUDENT: "Your marks for {subject} have been released."
-    2. For each PARENT: "{student.name}'s marks for {subject} have been released."
+  - Creates notification for the STUDENT: "Your marks for {subject} have been released."
 
 #### Added Filtering Methods:
 - **createNotificationForStudentsInClasses(classIds, title, message, type, ...)**
@@ -37,14 +35,11 @@ Implemented complete Communication and Announcement module with automated trigge
     - Their specific SchoolClass (targetClass = their class)
     - All STUDENT role notifications (targetRole = 'STUDENT')
     - Individual notifications (targetUser = them)
-  - **PARENT**: Sees notifications targeting:
-    - PARENT role (targetRole = 'PARENT')
-    - Individual notifications (targetUser = them)
 
 ### 2. Updated Notification Model (models/Notification.js)
 Already had all required fields:
 - `targetUser`: Specific recipient
-- `targetRole`: Role tag (STUDENT, TEACHER, PARENT, ADMIN)
+- `targetRole`: Role tag (STUDENT, TEACHER, ADMIN)
 - `targetClass`: SchoolClass reference
 - `createdBy`: User who created notification
 - `broadcastKey`: UUID for grouping multi-recipient notifications (updates/deletes apply to all with same key)
@@ -86,7 +81,7 @@ if (mark.published && req.body.published === true) {
 }
 ```
 - Triggers when marks are published (changed from unpublished to published)
-- Creates notifications for both student and parents
+- Creates notification for the student
 
 ### 6. Notification Controller (controllers/notificationController.js)
 **Added new endpoint:**
@@ -130,7 +125,7 @@ GET /api/notifications/visible
 **Features:**
 - **Create New Notification**:
   - Text inputs for Title and Message
-  - Chips for selecting Target Audience (STUDENT, TEACHER, PARENT)
+  - Chips for selecting Target Audience (STUDENT, TEACHER)
   - When STUDENT selected:
     - Class/Grade selector (multi-choice)
     - Subject selector (multi-choice)
@@ -169,7 +164,6 @@ GET /api/notifications/visible
 **Filtering Behavior by Role:**
 - **STUDENT**: Only sees notifications for their class OR global STUDENT notifications
 - **TEACHER**: Only sees notifications sent to TEACHER role
-- **PARENT**: Only sees notifications sent to PARENT role OR about their children
 - **ADMIN**: Sees all system notifications (for dashboard oversight)
 
 ### 3. Updated App Layout (mobile/app/_layout.tsx)
@@ -200,10 +194,6 @@ TEACHER:
   - targetRole = 'TEACHER'
   - OR targetUser = them (individual they created or targeted)
 
-PARENT:
-  - targetRole = 'PARENT' (all parents)
-  - OR targetUser = them (individual about their child)
-
 ADMIN:
   - All type='SYSTEM' notifications
 ```
@@ -219,13 +209,12 @@ ADMIN:
 ### Integration Tests Needed
 - [ ] Create exam → Verify notifications sent to all students in class
 - [ ] Update timetable → Verify notifications sent to all students in class
-- [ ] Publish marks → Verify notifications sent to student AND parents
+- [ ] Publish marks → Verify notification sent to student
 - [ ] Create manual notification → Verify broadcast to correct audience
 - [ ] Edit notification → Verify broadcast key updates all recipients
 - [ ] Delete notification → Verify broadcast key deletes all recipients
 - [ ] Student views notifications → Verify only sees class-specific + global
 - [ ] Teacher views notifications → Verify only sees TEACHER role notifications
-- [ ] Parent views notifications → Verify only sees PARENT role + individual
 
 ### Mobile Tests Needed
 - [ ] Navigate to manage-notifications (TEACHER/ADMIN only)
@@ -250,7 +239,7 @@ ADMIN:
 
 1. **Exam Creation**: Auto-creates system notification for all students in that class
 2. **Timetable Update**: Auto-creates system notification for all students in that class
-3. **Marks Release**: Auto-creates notifications for STUDENT + each PARENT
+3. **Marks Release**: Auto-creates notification for STUDENT
 4. **Manual Notifications**: Teachers/Admins can target by role, class, or subject
 5. **Broadcast Groups**: Notifications with same broadcastKey are updated/deleted together
 6. **Role-Based Visibility**: Each role sees only relevant notifications

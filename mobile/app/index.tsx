@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import type { AxiosError } from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 
 type ApiError = {
@@ -32,8 +33,6 @@ export default function LoginScreen() {
           router.replace('/(tabs)/student-dashboard');
         } else if (response.data.role === 'TEACHER') {
           router.replace('/(tabs)/teacher-dashboard');
-        } else if (response.data.role === 'PARENT') {
-          router.replace('/(tabs)/parent-dashboard');
         } else if (response.data.role === 'ADMIN') {
           router.replace('/(tabs)/admin-dashboard');
         }
@@ -47,31 +46,62 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Learn Mate Login</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Username or Email"
-        value={identifier}
-        onChangeText={setIdentifier}
-        autoCapitalize="none"
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
+      <View style={styles.accentTop} />
+      <View style={styles.accentBottom} />
 
-      <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={styles.link}>Don&apos;t have an account? Register</Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.logoBadge}>
+            <Ionicons name="school-outline" size={26} color="#3f51b5" />
+          </View>
+          <Text style={styles.welcome}>Welcome Back</Text>
+          <Text style={styles.title}>LearnMate Academy</Text>
+          <Text style={styles.subtitle}>
+            Welcome to Learn Mate. Sign in to access your educational portal.
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Sign In</Text>
+          <Text style={styles.cardSubtitle}>Use your account credentials to continue.</Text>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="person-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Username or Email"
+              placeholderTextColor="#8a94a6"
+              value={identifier}
+              onChangeText={setIdentifier}
+              autoCapitalize="none"
+              selectionColor="#3f51b5"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#8a94a6"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              selectionColor="#3f51b5"
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.9}>
+            <Text style={styles.buttonText}>Login</Text>
+            <Ionicons name="arrow-forward" size={18} color="#ffffff" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.registerRow} onPress={() => router.push('/register')}>
+            <Text style={styles.registerHint}>Don&apos;t have an account?</Text>
+            <Text style={styles.link}>Register</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -79,43 +109,139 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 20,
+    overflow: 'hidden',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
-    color: '#333',
+  accentTop: {
+    position: 'absolute',
+    top: -120,
+    right: -90,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#dbe2ff',
   },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    fontSize: 16,
+  accentBottom: {
+    position: 'absolute',
+    bottom: -130,
+    left: -100,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#e8edff',
   },
-  button: {
-    backgroundColor: '#007AFF',
-    height: 50,
-    borderRadius: 8,
+  content: {
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+  },
+  header: {
+    marginBottom: 20,
+  },
+  logoBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  welcome: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    color: '#3f51b5',
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#6b7280',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 18,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#d5dbe5',
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    height: 52,
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  button: {
+    marginTop: 4,
+    backgroundColor: '#3f51b5',
+    height: 54,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  registerRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  registerHint: {
+    color: '#6b7280',
+    fontSize: 14,
   },
   link: {
-    marginTop: 20,
-    textAlign: 'center',
-    color: '#007AFF',
-    fontSize: 16,
-  }
+    color: '#3f51b5',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

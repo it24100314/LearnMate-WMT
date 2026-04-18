@@ -36,20 +36,12 @@ const serializeFee = (fee) => ({
 
 const listFees = async (req, res) => {
   try {
-    if (req.user.role === 'PARENT') {
-      const parent = await User.findById(req.user.id).populate('children', '_id schoolClass');
-      const children = parent?.children || [];
-      const childIds = children.map((child) => child._id);
-      const classIds = children.map((child) => child.schoolClass).filter(Boolean);
-
-      const fees = await hydrateFees(
-        Fee.find({
-          student: { $in: childIds },
-          schoolClass: { $in: classIds },
-        }).sort({ dueDate: 1 })
+    if (req.user.role === 'STUDENT') {
+      const studentFees = await hydrateFees(
+        Fee.find({ student: req.user.id }).sort({ dueDate: 1 })
       );
 
-      return res.json({ fees: fees.map(serializeFee) });
+      return res.json({ fees: studentFees.map(serializeFee) });
     }
 
     const fees = await hydrateFees(Fee.find().sort({ dueDate: 1 }));
@@ -206,12 +198,8 @@ const searchFees = async (req, res) => {
       return res.status(404).json({ message: `Student not found with ID: ${studentId}` });
     }
 
-    if (req.user.role === 'PARENT') {
-      const parent = await User.findById(req.user.id).populate('children', '_id');
-      const childIds = (parent?.children || []).map((child) => String(child._id));
-      if (!childIds.includes(String(student._id))) {
-        return res.status(403).json({ message: "You can only view your own children's fees" });
-      }
+    if (req.user.role === 'STUDENT' && String(student._id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only view your own fees' });
     }
 
     const fees = await hydrateFees(
@@ -228,14 +216,13 @@ const searchFees = async (req, res) => {
   }
 };
 
-const parentPay = async (req, res) => {
+const studentPay = async (req, res) => {
   try {
     const studentId = req.body.studentId;
     const subjectId = req.body.subjectId;
     const amount = req.body.amount !== undefined ? Number(req.body.amount) : null;
     const slipDate = req.body.slipDate ? parseIsoDate(req.body.slipDate) : null;
 
-    const parent = await User.findById(req.user.id).populate('children', '_id');
     const student = await User.findById(studentId);
     const subject = await Subject.findById(subjectId);
 
@@ -243,9 +230,8 @@ const parentPay = async (req, res) => {
       return res.status(404).json({ message: 'Student or subject not found' });
     }
 
-    const childIds = (parent?.children || []).map((child) => String(child._id));
-    if (!childIds.includes(String(student._id))) {
-      return res.status(403).json({ message: "You can only pay fees for your own children" });
+    if (String(student._id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only pay your own fees' });
     }
 
     if (amount === null || Number.isNaN(amount) || amount <= 0) {
@@ -346,6 +332,6 @@ module.exports = {
   deleteFee,
   verifyFee,
   searchFees,
-  parentPay,
+  studentPay,
   createSubjectFee,
 };

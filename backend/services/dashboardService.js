@@ -219,73 +219,9 @@ const getStudentDashboard = async (student) => {
   }
 };
 
-/**
- * Get Parent Dashboard Data
- */
-const getParentDashboard = async (parent) => {
-  try {
-    if (!parent || parent.role !== 'PARENT') {
-      throw new Error('Invalid parent');
-    }
-
-    // Get children
-    const children = await User.find({ _id: { $in: parent.children } });
-
-    if (children.length === 0) {
-      return {
-        parentName: parent.name,
-        children: [],
-        message: 'No children linked to this account'
-      };
-    }
-
-    // Aggregate data for all children
-    const childrenData = await Promise.all(
-      children.map(async (child) => {
-        const attendance = await Attendance.find({ student: child._id });
-        const presentDays = attendance.filter(a => a.present).length;
-        const attendanceRate = attendance.length > 0 
-          ? (presentDays / attendance.length * 100).toFixed(2)
-          : 0;
-
-        const marks = await Mark.find({ student: child._id })
-          .sort({ createdAt: -1 })
-          .limit(5);
-
-        const totalMarks = marks.reduce((sum, m) => sum + (m.score || 0), 0);
-        const averageScore = marks.length > 0 ? (totalMarks / marks.length).toFixed(2) : 'N/A';
-
-        const fees = await Fee.find({ student: child._id });
-        const feePending = fees.filter(f => f.status === 'PENDING').length;
-        const feeOverdue = fees.filter(f => f.status === 'OVERDUE').length;
-
-        return {
-          name: child.name,
-          className: child.schoolClass?.name,
-          attendanceRate: `${attendanceRate}%`,
-          averageScore,
-          feePending,
-          feeOverdue,
-          lastUpdate: new Date()
-        };
-      })
-    );
-
-    return {
-      parentName: parent.name,
-      childrenCount: children.length,
-      children: childrenData
-    };
-  } catch (error) {
-    console.error('Error fetching parent dashboard:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   getAdminDashboard,
   getTeacherDashboard,
-  getStudentDashboard,
-  getParentDashboard
+  getStudentDashboard
 };
 

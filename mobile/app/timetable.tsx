@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 
 interface TimetableEntry {
@@ -51,8 +52,8 @@ export default function TimetableScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10 }}>Loading Schedule...</Text>
+        <ActivityIndicator size="large" color="#3f51b5" />
+        <Text style={styles.loadingText}>Loading Schedule...</Text>
       </View>
     );
   }
@@ -66,8 +67,11 @@ export default function TimetableScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>My Weekly Timetable</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>My Weekly Timetable</Text>
+        <Text style={styles.heroText}>Your complete class schedule for the week.</Text>
+      </View>
       
       {timetable.length === 0 ? (
         <Text style={styles.emptyText}>No classes scheduled.</Text>
@@ -79,8 +83,14 @@ export default function TimetableScreen() {
             </View>
             <View style={styles.details}>
               <Text style={styles.subjectText}>{session.subject?.name || 'Unknown Subject'}</Text>
-              <Text style={styles.timeText}>🕒 {session.startTime} - {session.endTime}</Text>
-              <Text style={styles.metaText}>🧑‍🏫 {session.teacher?.name || 'TBA'} | Class: {session.schoolClass?.name || 'TBA'}</Text>
+              <View style={styles.inlineMeta}>
+                <Ionicons name="time-outline" size={14} color="#64748b" />
+                <Text style={styles.timeText}>{session.startTime} - {session.endTime}</Text>
+              </View>
+              <View style={styles.inlineMeta}>
+                <Ionicons name="person-outline" size={14} color="#64748b" />
+                <Text style={styles.metaText}>{session.teacher?.name || 'TBA'} | Class: {session.schoolClass?.name || 'TBA'}</Text>
+              </View>
             </View>
           </View>
         ))
@@ -92,48 +102,74 @@ export default function TimetableScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 28,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#64748b',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    marginTop: 40,
-    color: '#333',
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  heroText: {
+    marginTop: 6,
+    color: '#64748b',
+    lineHeight: 20,
+    fontSize: 14,
   },
   errorText: {
-    color: 'red',
+    color: '#ff5252',
     fontSize: 16,
     textAlign: 'center',
   },
   emptyText: {
     textAlign: 'center',
-    color: '#666',
+    color: '#64748b',
     marginTop: 30,
     fontSize: 16,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
     marginBottom: 15,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   dayBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 15,
     justifyContent: 'center',
@@ -142,8 +178,8 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   dayText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontWeight: '700',
     fontSize: 14,
     textTransform: 'capitalize',
   },
@@ -152,18 +188,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   subjectText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1f2937',
     marginBottom: 5,
+  },
+  inlineMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   timeText: {
     fontSize: 14,
-    color: '#555',
+    color: '#475569',
     marginBottom: 3,
   },
   metaText: {
     fontSize: 13,
-    color: '#888',
+    color: '#64748b',
   },
 });

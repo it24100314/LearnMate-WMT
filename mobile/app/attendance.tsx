@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import api from '../utils/api';
 
@@ -73,7 +73,7 @@ export default function StudentAttendanceScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -87,12 +87,15 @@ export default function StudentAttendanceScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Your Attendance Summary</Text>
-      
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Your Attendance Summary</Text>
+        <Text style={styles.heroText}>Track your consistency, presence, and classroom participation.</Text>
+      </View>
+
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
-          <Text style={[styles.statValue, { color: '#007AFF' }]}>{stats.total}</Text>
+          <Text style={[styles.statValue, { color: '#3f51b5' }]}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total Days</Text>
         </View>
         <View style={styles.statBox}>
@@ -100,80 +103,100 @@ export default function StudentAttendanceScreen() {
           <Text style={styles.statLabel}>Present</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={[styles.statValue, { color: '#dc2626' }]}>{stats.absent}</Text>
+          <Text style={[styles.statValue, { color: '#ff5252' }]}>{stats.absent}</Text>
           <Text style={styles.statLabel}>Absent</Text>
         </View>
       </View>
 
       <Text style={styles.subHeader}>Recent Records</Text>
 
-      <FlatList
-        data={records}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={records.length === 0 ? styles.center : styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>No attendance records found.</Text>}
-        renderItem={({ item }) => {
-          const dateStr = item.date ? new Date(item.date).toLocaleDateString() : 'Unknown Date';
-          return (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.dateText}>{dateStr}</Text>
+      {records.length === 0 ? (
+        <Text style={styles.emptyText}>No attendance records found.</Text>
+      ) : (
+        <View style={styles.list}>
+          {records.map((item) => {
+            const dateStr = item.date ? new Date(item.date).toLocaleDateString() : 'Unknown Date';
+            return (
+              <View key={item._id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.dateText}>{dateStr}</Text>
                   <Text style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                     {item.status}
-                </Text>
+                  </Text>
+                </View>
+                <View style={styles.cardBody}>
+                  {item.subject && <Text style={styles.detailText}>Subject: {item.subject.name}</Text>}
+                  {item.schoolClass && <Text style={styles.detailText}>Class: {item.schoolClass.name}</Text>}
+                  {item.notes && <Text style={styles.notesText}>Notes: {item.notes}</Text>}
+                </View>
               </View>
-              <View style={styles.cardBody}>
-                {item.subject && <Text style={styles.detailText}>Subject: {item.subject.name}</Text>}
-                {item.schoolClass && <Text style={styles.detailText}>Class: {item.schoolClass.name}</Text>}
-                {item.notes && <Text style={styles.notesText}>Notes: {item.notes}</Text>}
-              </View>
-            </View>
-          );
-        }}
-      />
-    </View>
+            );
+          })}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 28,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginHorizontal: 20,
-    marginTop: 30,
-    marginBottom: 15,
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1f2937',
+  },
+  heroText: {
+    marginTop: 6,
+    color: '#64748b',
+    fontSize: 14,
+    lineHeight: 20,
   },
   subHeader: {
     fontSize: 18,
-    fontWeight: '600',
-    marginHorizontal: 20,
+    fontWeight: '700',
     marginBottom: 10,
-    color: '#374151',
+    color: '#334155',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    marginBottom: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   statBox: {
     alignItems: 'center',
@@ -186,22 +209,23 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 13,
-    color: '#6b7280',
+    color: '#64748b',
   },
   list: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
     padding: 15,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -211,38 +235,39 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#1f2937',
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
     overflow: 'hidden',
   },
   cardBody: {},
   detailText: {
     fontSize: 14,
-    color: '#4b5563',
+    color: '#475569',
     marginBottom: 3,
   },
   notesText: {
     fontSize: 13,
-    color: '#6b7280',
+    color: '#64748b',
     fontStyle: 'italic',
     marginTop: 5,
   },
   errorText: {
-    color: '#ef4444',
+    color: '#ff5252',
     fontSize: 16,
     textAlign: 'center',
   },
   emptyText: {
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
     fontSize: 15,
+    marginTop: 4,
   },
 });

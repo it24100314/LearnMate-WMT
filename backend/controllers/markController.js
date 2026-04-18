@@ -44,10 +44,6 @@ const listMarks = async (req, res) => {
       marks = await hydrateMarks(Mark.find({ exam: { $in: examIds } }));
     } else if (req.user.role === 'STUDENT') {
       marks = await hydrateMarks(Mark.find({ student: req.user.id }));
-    } else if (req.user.role === 'PARENT') {
-      const parent = await User.findById(req.user.id).populate('children', '_id');
-      const childIds = (parent?.children || []).map((child) => child._id);
-      marks = await hydrateMarks(Mark.find({ student: { $in: childIds } }));
     } else {
       marks = await hydrateMarks(Mark.find());
     }

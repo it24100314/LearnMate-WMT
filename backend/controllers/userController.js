@@ -55,8 +55,6 @@ const getMe = async (req, res) => {
       active: req.currentUser.active,
       schoolClass: req.currentUser.schoolClass,
       subjects: req.currentUser.subjects,
-      children: req.currentUser.children,
-      parents: req.currentUser.parents,
       assignedClasses: req.currentUser.assignedClasses
     });
   } catch (error) {

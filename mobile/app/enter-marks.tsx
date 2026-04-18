@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import api from '../utils/api';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import { downloadAndShareApiFile } from '../utils/download';
 
 type NamedItem = { _id: string; name: string };
@@ -181,19 +182,22 @@ export default function EnterMarksScreen() {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#007AFF" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color="#3f51b5" /></View>;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Enter Marks</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Enter Marks</Text>
+        <Text style={styles.heroText}>Choose class and exam, then review submissions and submit marks.</Text>
+      </View>
 
       <View style={styles.selectionArea}>
         <Text style={styles.label}>Select Class</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
           {classes.map(c => (
-            <TouchableOpacity 
-              key={c._id} 
+            <TouchableOpacity
+              key={c._id}
               style={[styles.chip, selectedClassId === c._id && styles.chipActive]}
               onPress={() => handleClassChange(c._id)}
             >
@@ -206,8 +210,8 @@ export default function EnterMarksScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
           {exams.length === 0 ? <Text style={styles.noDataText}>No exams for this class</Text> : null}
           {exams.map(e => (
-            <TouchableOpacity 
-              key={e._id} 
+            <TouchableOpacity
+              key={e._id}
               style={[styles.chip, selectedExamId === e._id && styles.chipActive]}
               onPress={() => handleExamChange(e._id)}
             >
@@ -220,28 +224,36 @@ export default function EnterMarksScreen() {
       </View>
 
       {fetchingRoster ? (
-        <ActivityIndicator size="small" color="#007AFF" style={{marginTop: 20}} />
+        <ActivityIndicator size="small" color="#3f51b5" style={{ marginTop: 20 }} />
       ) : (
-        <FlatList
-          data={selectedClassId ? students : []}
-          keyExtractor={item => item._id}
-          ListEmptyComponent={<Text style={styles.noDataText}>{selectedClassId ? 'No students' : 'Select a class to begin'}</Text>}
-          contentContainerStyle={{ padding: 20 }}
-          renderItem={({ item }) => {
+        <View style={styles.studentsWrap}>
+          {selectedClassId && students.length === 0 ? (
+            <Text style={styles.noDataText}>No students</Text>
+          ) : null}
+
+          {!selectedClassId ? (
+            <Text style={styles.noDataText}>Select a class to begin</Text>
+          ) : null}
+
+          {selectedClassId ? (
+            <Text style={styles.selectionSummary}>Students for selected class</Text>
+          ) : null}
+
+          {selectedClassId ? students.map((item) => {
             const submission = submissions[item._id];
             return (
-              <View style={styles.studentCard}>
+              <View key={item._id} style={styles.studentCard}>
                 <Text style={styles.studentName}>{item.name} ({item.username})</Text>
-                
-                {/* Answer Sheet Display */}
+
                 {submission && submission.filePath && (
                   <TouchableOpacity
                     style={styles.downloadButton}
                     onPress={() => downloadAnswerSheet(item, submission)}
                     disabled={downloadingId === item._id}
                   >
+                    <Ionicons name="download-outline" size={18} color="#ffffff" />
                     <Text style={styles.downloadButtonText}>
-                      {downloadingId === item._id ? '📥 Downloading...' : '📄 Download Answer Sheet'}
+                      {downloadingId === item._id ? 'Downloading...' : 'Download Answer Sheet'}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -249,64 +261,127 @@ export default function EnterMarksScreen() {
                 {submission && !submission.filePath && (
                   <Text style={styles.noAnswerText}>No answer sheet submitted</Text>
                 )}
-                
+
                 <View style={styles.inputRow}>
                   <TextInput
                     style={styles.scoreInput}
                     placeholder="Score"
+                    placeholderTextColor="#8a94a6"
                     keyboardType="numeric"
                     value={marksData[item._id]?.score || ''}
                     onChangeText={(val) => handleScoreChange(item._id, val)}
+                    selectionColor="#3f51b5"
                   />
                   <TextInput
                     style={styles.commentInput}
                     placeholder="Comments"
+                    placeholderTextColor="#8a94a6"
                     value={marksData[item._id]?.comments || ''}
                     onChangeText={(val) => handleCommentChange(item._id, val)}
+                    selectionColor="#3f51b5"
                   />
                 </View>
               </View>
             );
-          }}
-        />
+          }) : null}
+        </View>
       )}
 
       {selectedClassId && (
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            style={[styles.submitBtn, submitting && { opacity: 0.7 }]} 
-            onPress={submitMarks}
-            disabled={submitting}
-          >
-            <Text style={styles.submitText}>{submitting ? 'Saving...' : 'Save All Marks'}</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.submitBtn, submitting && { opacity: 0.7 }]}
+          onPress={submitMarks}
+          disabled={submitting}
+        >
+          <Ionicons name="save-outline" size={18} color="#ffffff" />
+          <Text style={styles.submitText}>{submitting ? 'Saving...' : 'Save All Marks'}</Text>
+        </TouchableOpacity>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 20, fontWeight: 'bold', marginHorizontal: 20, marginTop: 30, marginBottom: 15, color: '#1f2937' },
-  selectionArea: { backgroundColor: '#fff', padding: 15, borderBottomWidth: 1, borderBottomColor: '#ddd' },
-  label: { fontSize: 13, fontWeight: 'bold', color: '#6b7280', marginBottom: 8, marginTop: 10 },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  content: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 28 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  header: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  heroText: { marginTop: 6, color: '#64748b', lineHeight: 20, fontSize: 14 },
+  selectionArea: {
+    backgroundColor: '#ffffff',
+    padding: 15,
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
+  label: { fontSize: 13, fontWeight: '700', color: '#64748b', marginBottom: 8, marginTop: 8 },
   chipsRow: { flexDirection: 'row', marginBottom: 10 },
-  chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6', marginRight: 10, borderWidth: 1, borderColor: '#e5e7eb' },
-  chipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-  chipText: { color: '#374151', fontSize: 14 },
-  chipTextActive: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  noDataText: { color: '#9ca3af', fontStyle: 'italic', paddingVertical: 8, textAlign: 'center', flex: 1 },
-  studentCard: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 15, elevation: 1 },
-  studentName: { fontSize: 16, fontWeight: '600', marginBottom: 10, color: '#111827' },
+  chip: { paddingHorizontal: 15, paddingVertical: 9, borderRadius: 999, backgroundColor: '#f8f9fa', marginRight: 10, borderWidth: 1, borderColor: '#d5dbe5' },
+  chipActive: { backgroundColor: '#3f51b5', borderColor: '#3f51b5' },
+  chipText: { color: '#334155', fontSize: 13, fontWeight: '600' },
+  chipTextActive: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+  noDataText: { color: '#8a94a6', fontStyle: 'italic', paddingVertical: 8, textAlign: 'center', flex: 1 },
+  studentsWrap: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
+  studentCard: { backgroundColor: '#ffffff', padding: 15, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#edf0f5' },
+  studentName: { fontSize: 15, fontWeight: '700', marginBottom: 10, color: '#1f2937' },
   inputRow: { flexDirection: 'row', gap: 10 },
-  scoreInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 10, width: 80, fontSize: 15, textAlign: 'center' },
-  commentInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 10, flex: 1, fontSize: 14 },
-  footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  submitBtn: { backgroundColor: '#10b981', paddingVertical: 15, borderRadius: 10, alignItems: 'center' },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  downloadButton: { backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
-  downloadButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  noAnswerText: { fontSize: 13, color: '#9ca3af', fontStyle: 'italic', marginBottom: 10 }
+  scoreInput: { borderWidth: 1, borderColor: '#d5dbe5', borderRadius: 14, padding: 10, width: 84, fontSize: 15, textAlign: 'center', backgroundColor: '#ffffff', color: '#1f2937' },
+  commentInput: { borderWidth: 1, borderColor: '#d5dbe5', borderRadius: 14, padding: 10, flex: 1, fontSize: 14, backgroundColor: '#ffffff', color: '#1f2937' },
+  submitBtn: {
+    backgroundColor: '#3f51b5',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  submitText: { color: '#ffffff', fontSize: 15, fontWeight: '700' },
+  downloadButton: {
+    backgroundColor: '#3f51b5',
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginBottom: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  downloadButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  noAnswerText: { fontSize: 13, color: '#8a94a6', fontStyle: 'italic', marginBottom: 10 },
+  selectionSummary: { color: '#334155', fontWeight: '700', marginBottom: 10 },
 });

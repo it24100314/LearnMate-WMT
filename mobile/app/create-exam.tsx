@@ -13,6 +13,7 @@ import {
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import FormData from 'form-data';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 
 type NamedItem = { _id: string; name: string };
@@ -191,120 +192,142 @@ export default function CreateExamScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.header}>Create Exam</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Create Exam</Text>
+        <Text style={styles.heroSubText}>Publish exam details, attach PDF, and assign to your class.</Text>
+      </View>
 
-      <Text style={styles.label}>Title *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., Mid-Term Mathematics"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <Text style={styles.label}>Max Marks *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="100"
-        value={maxMarks}
-        onChangeText={setMaxMarks}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Pass Mark *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="40"
-        value={passMark}
-        onChangeText={setPassMark}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Deadline (Date & Time) *</Text>
-      <TouchableOpacity
-        style={styles.datePickerButton}
-        onPress={showDatepicker}
-      >
-        <Text style={styles.datePickerText}>{formatDateTimeForDisplay(deadline)}</Text>
-      </TouchableOpacity>
-
-      {showDeadlinePicker && Platform.OS === 'ios' && (
-        <DateTimePicker
-          value={deadline}
-          mode="datetime"
-          display="spinner"
-          onChange={handleDeadlineChange}
-          onDismiss={() => setShowDeadlinePicker(false)}
+      <View style={styles.formCard}>
+        <Text style={styles.label}>Title *</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., Mid-Term Mathematics"
+          placeholderTextColor="#8a94a6"
+          value={title}
+          onChangeText={setTitle}
+          selectionColor="#3f51b5"
         />
-      )}
 
-      <Text style={styles.label}>Additional Instructions (Optional)</Text>
-      <TextInput
-        style={[styles.input, { height: 80 }]}
-        placeholder="Any special instructions for students..."
-        value={additionalInstructions}
-        onChangeText={setAdditionalInstructions}
-        multiline
-      />
+        <View style={styles.rowInputs}>
+          <View style={styles.flexField}>
+            <Text style={styles.label}>Max Marks *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="100"
+              placeholderTextColor="#8a94a6"
+              value={maxMarks}
+              onChangeText={setMaxMarks}
+              keyboardType="numeric"
+              selectionColor="#3f51b5"
+            />
+          </View>
 
-      <Text style={styles.label}>Select Your Class *</Text>
-      <View style={styles.optionWrap}>
-        {classes.length === 0 ? (
-          <Text style={styles.noOptionsText}>No classes assigned</Text>
-        ) : (
-          classes.map((item) => (
-            <TouchableOpacity
-              key={item._id}
-              style={[styles.optionChip, classId === item._id && styles.optionChipSelected]}
-              onPress={() => setClassId(item._id)}
-            >
-              <Text style={[styles.optionText, classId === item._id && styles.optionTextSelected]}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))
+          <View style={styles.flexField}>
+            <Text style={styles.label}>Pass Mark *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="40"
+              placeholderTextColor="#8a94a6"
+              value={passMark}
+              onChangeText={setPassMark}
+              keyboardType="numeric"
+              selectionColor="#3f51b5"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.label}>Deadline (Date & Time) *</Text>
+        <TouchableOpacity
+          style={styles.datePickerButton}
+          onPress={showDatepicker}
+        >
+          <Ionicons name="calendar-outline" size={18} color="#3f51b5" />
+          <Text style={styles.datePickerText}>{formatDateTimeForDisplay(deadline)}</Text>
+        </TouchableOpacity>
+
+        {showDeadlinePicker && Platform.OS === 'ios' && (
+          <DateTimePicker
+            value={deadline}
+            mode="datetime"
+            display="spinner"
+            onChange={handleDeadlineChange}
+            onDismiss={() => setShowDeadlinePicker(false)}
+          />
         )}
+
+        <Text style={styles.label}>Additional Instructions (Optional)</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Any special instructions for students..."
+          placeholderTextColor="#8a94a6"
+          value={additionalInstructions}
+          onChangeText={setAdditionalInstructions}
+          multiline
+          selectionColor="#3f51b5"
+        />
+
+        <Text style={styles.label}>Select Your Class *</Text>
+        <View style={styles.optionWrap}>
+          {classes.length === 0 ? (
+            <Text style={styles.noOptionsText}>No classes assigned</Text>
+          ) : (
+            classes.map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                style={[styles.optionChip, classId === item._id && styles.optionChipSelected]}
+                onPress={() => setClassId(item._id)}
+              >
+                <Text style={[styles.optionText, classId === item._id && styles.optionTextSelected]}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        <Text style={styles.label}>Select Your Subject *</Text>
+        <View style={styles.optionWrap}>
+          {subjects.length === 0 ? (
+            <Text style={styles.noOptionsText}>No subjects assigned</Text>
+          ) : (
+            subjects.map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                style={[styles.optionChip, subjectId === item._id && styles.optionChipSelected]}
+                onPress={() => setSubjectId(item._id)}
+              >
+                <Text style={[styles.optionText, subjectId === item._id && styles.optionTextSelected]}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        <Text style={styles.label}>Upload Exam PDF *</Text>
+        <TouchableOpacity style={styles.filePickerButton} onPress={pickExamPDF}>
+          <Ionicons name="document-attach-outline" size={20} color="#3f51b5" />
+          <Text style={styles.filePickerText}>
+            {selectedFile ? `Selected: ${selectedFile.name}` : 'Choose Exam PDF'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.uploadBtn, saving && styles.uploadBtnDisabled]}
+          onPress={handleCreate}
+          disabled={saving}
+        >
+          <Ionicons name="checkmark-circle-outline" size={20} color="#ffffff" />
+          <Text style={styles.uploadText}>{saving ? 'Creating...' : 'Create Exam'}</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.label}>Select Your Subject *</Text>
-      <View style={styles.optionWrap}>
-        {subjects.length === 0 ? (
-          <Text style={styles.noOptionsText}>No subjects assigned</Text>
-        ) : (
-          subjects.map((item) => (
-            <TouchableOpacity
-              key={item._id}
-              style={[styles.optionChip, subjectId === item._id && styles.optionChipSelected]}
-              onPress={() => setSubjectId(item._id)}
-            >
-              <Text style={[styles.optionText, subjectId === item._id && styles.optionTextSelected]}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
-      <Text style={styles.label}>Upload Exam PDF *</Text>
-      <TouchableOpacity style={styles.filePickerButton} onPress={pickExamPDF}>
-        <Text style={styles.filePickerText}>
-          {selectedFile ? `Selected: ${selectedFile.name}` : 'Choose Exam PDF'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.uploadBtn, saving && styles.uploadBtnDisabled]}
-        onPress={handleCreate}
-        disabled={saving}
-      >
-        <Text style={styles.uploadText}>{saving ? 'Creating...' : 'Create Exam'}</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -312,63 +335,109 @@ export default function CreateExamScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   content: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 40,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    marginTop: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    marginTop: 10,
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  heroSubText: {
+    marginTop: 6,
+    color: '#64748b',
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  flexField: {
+    flex: 1,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#d5dbe5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 12,
-    fontSize: 16,
+    fontSize: 15,
+    color: '#1f2937',
+    backgroundColor: '#ffffff',
+  },
+  textArea: {
+    height: 88,
+    textAlignVertical: 'top',
   },
   label: {
     fontWeight: '700',
-    color: '#374151',
+    color: '#334155',
     marginBottom: 8,
-    marginTop: 6,
+    marginTop: 4,
   },
   datePickerButton: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#d5dbe5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 12,
     justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#ffffff',
   },
   datePickerText: {
-    fontSize: 16,
-    color: '#374151',
+    fontSize: 15,
+    color: '#334155',
   },
   filePickerButton: {
-    borderWidth: 2,
-    borderColor: '#007AFF',
+    borderWidth: 1,
+    borderColor: '#cfd8ff',
     borderStyle: 'dashed',
-    padding: 20,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0F7FF',
+    backgroundColor: '#edf2ff',
+    gap: 6,
   },
   filePickerText: {
-    fontSize: 16,
-    color: '#007AFF',
+    fontSize: 14,
+    color: '#3f51b5',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -379,41 +448,51 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   noOptionsText: {
-    color: '#999',
+    color: '#8a94a6',
     fontStyle: 'italic',
   },
   optionChip: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 18,
+    borderColor: '#d5dbe5',
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    paddingVertical: 9,
+    backgroundColor: '#ffffff',
   },
   optionChipSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#2563eb',
+    borderColor: '#3f51b5',
+    backgroundColor: '#3f51b5',
   },
   optionText: {
-    color: '#374151',
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
   },
   optionTextSelected: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   uploadBtn: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#3f51b5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   uploadBtnDisabled: {
     opacity: 0.6,
   },
   uploadText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

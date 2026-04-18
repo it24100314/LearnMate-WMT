@@ -5,7 +5,7 @@ const Subject = require('../models/Subject');
 const SchoolClass = require('../models/SchoolClass');
 const notificationService = require('../services/notificationService');
 
-const VALID_ROLES = ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'];
+const VALID_ROLES = ['ADMIN', 'TEACHER', 'STUDENT'];
 
 const toRoleArray = (value) => {
   if (!value) return [];
@@ -254,8 +254,7 @@ const deleteNotification = async (req, res) => {
  * Filters by:
  * - ADMIN: All system notifications
  * - TEACHER: Notifications sent to TEACHER role
- * - STUDENT: Notifications sent to their class + STUDENT role + individual  
- * - PARENT: Notifications sent to PARENT role + individual
+ * - STUDENT: Notifications sent to their class + STUDENT role + individual
  */
 const getVisibleNotifications = async (req, res) => {
   try {

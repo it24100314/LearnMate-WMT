@@ -102,12 +102,6 @@ GET /api/dashboard/student
 ```
 Returns: attendanceRate, upcomingExams, averageScore, feeStatus, unreadNotifications
 
-**Parent Dashboard**
-```
-GET /api/dashboard/parent
-```
-Returns: childrenCount, children array with individual stats
-
 **Director Dashboard** ⭐ NEW
 ```
 GET /api/dashboard/director
@@ -228,7 +222,6 @@ Create new screen for support officer role
 - Admin: System overview & fee collection
 - Teacher: Student count, exams, marks, attendance
 - Student: Personal attendance, exams, marks, fees
-- Parent: Multi-child progress tracking
 - Director: High-level metrics & alerts ⭐
 - Support Officer: At-risk student detection ⭐
 
@@ -291,7 +284,7 @@ npm start
    - Predictive alerts
 
 4. **SMS/Email Notifications**
-   - Alert students/parents of low attendance
+  - Alert students of low attendance
    - Fee payment reminders
    - Mark notifications
 

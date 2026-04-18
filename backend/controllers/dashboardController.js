@@ -23,9 +23,6 @@ const getDashboard = async (req, res) => {
       case 'STUDENT':
         dashboardData = await dashboardService.getStudentDashboard(user);
         break;
-      case 'PARENT':
-        dashboardData = await dashboardService.getParentDashboard(user);
-        break;
       default:
         return res.status(403).json({ message: 'Unknown user role' });
     }
@@ -90,28 +87,10 @@ const getStudentDashboard = async (req, res) => {
   }
 };
 
-/**
- * Parent Dashboard
- */
-const getParentDashboard = async (req, res) => {
-  try {
-    const user = req.currentUser;
-    if (user.role !== 'PARENT') {
-      return res.status(403).json({ message: 'Only parents can access this' });
-    }
-
-    const dashboardData = await dashboardService.getParentDashboard(user);
-    res.json(dashboardData);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 module.exports = {
   getDashboard,
   getAdminDashboard,
   getTeacherDashboard,
-  getStudentDashboard,
-  getParentDashboard
+  getStudentDashboard
 };
 

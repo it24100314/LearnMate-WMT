@@ -398,7 +398,7 @@ const createNotificationForUpdatedTimetable = async (timetable) => {
 
 /**
  * Trigger notification when marks are released for a student
- * Sends to the STUDENT and their PARENT(s)
+ * Sends to the STUDENT
  */
 const createNotificationForMarksReleased = async (student, marksInfo = {}) => {
   if (!student || !student._id) {
@@ -422,24 +422,6 @@ const createNotificationForMarksReleased = async (student, marksInfo = {}) => {
   });
   if (studentNotif) {
     created.push(studentNotif);
-  }
-
-  // Create notification for all parents of this student
-  if (student.parents && student.parents.length > 0) {
-    const parents = await User.find({ _id: { $in: student.parents } });
-    for (const parent of parents) {
-      const parentNotif = await createNotificationForUser({
-        recipient: parent,
-        schoolClass: null,
-        title: `${student.name}'s Marks Released`,
-        message: `${student.name}'s marks for ${subject} have been released.`,
-        type: 'SYSTEM',
-        roleTag: 'PARENT',
-      });
-      if (parentNotif) {
-        created.push(parentNotif);
-      }
-    }
   }
 
   return created;
@@ -530,21 +512,6 @@ const getVisibleNotificationsForUser = async (user) => {
       $or: [
         { targetClass: user.schoolClass, targetRole: 'STUDENT' },
         { targetRole: 'STUDENT' },
-        { targetUser: user._id },
-      ],
-    })
-      .sort({ createdAt: -1 })
-      .populate('targetClass', 'name')
-      .populate('createdBy', 'name role');
-  }
-
-  if (user.role === 'PARENT') {
-    // Parent sees:
-    // 1. Notifications sent to PARENT role (all parents)
-    // 2. Notifications sent to them individually (about their children)
-    return Notification.find({
-      $or: [
-        { targetRole: 'PARENT' },
         { targetUser: user._id },
       ],
     })

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
 
@@ -187,7 +188,7 @@ export default function GradeSubmissionsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -215,7 +216,10 @@ export default function GradeSubmissionsScreen() {
 
       {/* Instructions */}
       <View style={styles.instructionsBox}>
-        <Text style={styles.instructionsTitle}>📋 Grading Instructions</Text>
+        <View style={styles.inlineTitle}>
+          <Ionicons name="information-circle-outline" size={18} color="#3f51b5" />
+          <Text style={styles.instructionsTitle}>Grading Instructions</Text>
+        </View>
         <Text style={styles.instructionsText}>
           Review each student's submission. Enter marks (0-{exam.maxMarks}) and optional comments. Click "Submit Grades"
           when complete.
@@ -265,8 +269,9 @@ export default function GradeSubmissionsScreen() {
                   onPress={() => downloadSubmission(student, submission)}
                   disabled={downloadingId === student._id}
                 >
+                  <Ionicons name="download-outline" size={16} color="#3f51b5" />
                   <Text style={styles.downloadBtnText}>
-                    {downloadingId === student._id ? 'Downloading...' : `📥 ${student.name}_${exam.subject?.name || 'subject'}_${exam.title}.pdf`}
+                    {downloadingId === student._id ? 'Downloading...' : `${student.name}_${exam.subject?.name || 'subject'}_${exam.title}.pdf`}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -308,7 +313,8 @@ export default function GradeSubmissionsScreen() {
         onPress={submitGrades}
         disabled={submitting}
       >
-        <Text style={styles.submitBtnText}>{submitting ? 'Submitting...' : '✓ Submit All Grades'}</Text>
+        <Ionicons name="checkmark-circle-outline" size={18} color="#ffffff" />
+        <Text style={styles.submitBtnText}>{submitting ? 'Submitting...' : 'Submit All Grades'}</Text>
       </TouchableOpacity>
 
       <View style={{ height: 30 }} />
@@ -319,49 +325,67 @@ export default function GradeSubmissionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
   },
   header: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 16,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginTop: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#1f2937',
     marginBottom: 8,
   },
   headerMeta: {
     fontSize: 13,
-    color: '#E0E7FF',
+    color: '#64748b',
     marginBottom: 3,
   },
   instructionsBox: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#ffffff',
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#D97706',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  inlineTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
   instructionsTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#92400E',
-    marginBottom: 4,
+    color: '#3f51b5',
   },
   instructionsText: {
     fontSize: 12,
-    color: '#78350F',
+    color: '#475569',
     lineHeight: 18,
   },
   rosterSection: {
@@ -371,20 +395,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1f2937',
     marginBottom: 12,
   },
   studentCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     padding: 14,
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   studentInfo: {
     marginBottom: 8,
@@ -392,129 +417,142 @@ const styles = StyleSheet.create({
   studentName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1f2937',
   },
   studentUsername: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#64748b',
     marginTop: 2,
   },
   statusBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#ecfdf5',
     borderLeftWidth: 3,
-    borderLeftColor: '#10B981',
+    borderLeftColor: '#16a34a',
     padding: 8,
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 8,
   },
   statusBadgeLate: {
-    backgroundColor: '#FEF2F2',
-    borderLeftColor: '#DC2626',
+    backgroundColor: '#fef2f2',
+    borderLeftColor: '#ff5252',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#059669',
+    color: '#15803d',
   },
   statusTextLate: {
-    color: '#DC2626',
+    color: '#ff5252',
   },
   statusTime: {
     fontSize: 11,
-    color: '#047857',
+    color: '#166534',
     marginTop: 2,
   },
   statusBadgeEmpty: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#f8f9fa',
     borderLeftWidth: 3,
-    borderLeftColor: '#9CA3AF',
+    borderLeftColor: '#94a3b8',
     padding: 8,
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 8,
   },
   statusTextEmpty: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#4B5563',
+    color: '#475569',
   },
   downloadBtn: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#edf2ff',
     borderWidth: 1,
-    borderColor: '#3B82F6',
-    borderRadius: 6,
+    borderColor: '#cfd8ff',
+    borderRadius: 10,
     padding: 8,
     marginBottom: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   downloadBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#1E40AF',
+    color: '#3f51b5',
   },
   gradingForm: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#f8f9fa',
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 10,
     marginTop: 8,
   },
   gradingLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: '#475569',
     marginBottom: 4,
   },
   marksInput: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 6,
+    borderColor: '#d5dbe5',
+    borderRadius: 12,
     padding: 8,
     fontSize: 14,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
   },
   commentsInput: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 6,
+    borderColor: '#d5dbe5',
+    borderRadius: 12,
     padding: 8,
     fontSize: 14,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
     height: 60,
     textAlignVertical: 'top',
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#e2e8f0',
     marginTop: 12,
   },
   submitBtn: {
     marginHorizontal: 16,
-    backgroundColor: '#10B981',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   submitBtnDisabled: {
     opacity: 0.6,
   },
   submitBtnText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '700',
   },
   button: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   errorText: {
-    color: '#991B1B',
+    color: '#ff5252',
     fontSize: 16,
     marginBottom: 10,
   },

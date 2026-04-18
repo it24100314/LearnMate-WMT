@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 
 type Subject = { _id: string; name: string };
@@ -106,7 +107,7 @@ export default function FeesScreen() {
         type: picked.mimeType || 'application/pdf',
       } as unknown as Blob);
 
-      await api.post('/fees/parent-pay', formData, {
+      await api.post('/fees/student-pay', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -135,7 +136,7 @@ export default function FeesScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -145,6 +146,12 @@ export default function FeesScreen() {
       data={fees}
       keyExtractor={(item) => item._id}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadFees(); }} />}
+      ListHeaderComponent={
+        <View style={styles.heroCard}>
+          <Text style={styles.heroTitle}>Fee Management</Text>
+          <Text style={styles.heroText}>Track fee status, upload payment slips, and verify pending submissions.</Text>
+        </View>
+      }
       contentContainerStyle={fees.length === 0 ? styles.center : styles.list}
       ListEmptyComponent={<Text style={styles.empty}>No fee records available.</Text>}
       renderItem={({ item }) => (
@@ -160,7 +167,7 @@ export default function FeesScreen() {
             <Text style={styles.meta}>Submitted: ${item.submittedAmount}</Text>
           ) : null}
 
-          {role === 'PARENT' && item.status === 'PENDING' ? (
+          {role === 'STUDENT' && item.status === 'PENDING' ? (
             <View style={styles.paySection}>
               <TextInput
                 value={amountDrafts[item._id]}
@@ -168,18 +175,23 @@ export default function FeesScreen() {
                 keyboardType="decimal-pad"
                 style={styles.input}
                 placeholder="Amount"
+                placeholderTextColor="#8a94a6"
+                selectionColor="#3f51b5"
               />
               <TextInput
                 value={dateDrafts[item._id]}
                 onChangeText={(value) => setDateDrafts((prev) => ({ ...prev, [item._id]: value }))}
                 style={styles.input}
                 placeholder="YYYY-MM-DD"
+                placeholderTextColor="#8a94a6"
+                selectionColor="#3f51b5"
               />
               <TouchableOpacity
                 style={styles.button}
                 onPress={() => submitPayment(item)}
                 disabled={busyFeeId === item._id}
               >
+                <Ionicons name="cloud-upload-outline" size={18} color="#ffffff" />
                 <Text style={styles.buttonText}>{busyFeeId === item._id ? 'Submitting...' : 'Upload Slip & Submit'}</Text>
               </TouchableOpacity>
             </View>
@@ -191,6 +203,7 @@ export default function FeesScreen() {
               onPress={() => verifyPayment(item._id)}
               disabled={busyFeeId === item._id}
             >
+              <Ionicons name="checkmark-circle-outline" size={18} color="#ffffff" />
               <Text style={styles.buttonText}>{busyFeeId === item._id ? 'Verifying...' : 'Verify Payment'}</Text>
             </TouchableOpacity>
           ) : null}
@@ -205,29 +218,56 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
   },
   list: {
     padding: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  heroText: {
+    marginTop: 6,
+    color: '#64748b',
+    lineHeight: 20,
+    fontSize: 14,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#1d4ed8',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1f2937',
     marginBottom: 6,
   },
   meta: {
     fontSize: 13,
-    color: '#4b5563',
+    color: '#475569',
     marginBottom: 3,
   },
   amount: {
@@ -244,29 +284,34 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderColor: '#d5dbe5',
+    borderRadius: 14,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginBottom: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
   },
   button: {
     marginTop: 4,
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 10,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   verifyButton: {
-    backgroundColor: '#059669',
+    backgroundColor: '#16a34a',
   },
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
+    fontSize: 13,
   },
   empty: {
-    color: '#6b7280',
+    color: '#64748b',
     fontSize: 15,
   },
 });

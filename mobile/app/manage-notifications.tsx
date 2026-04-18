@@ -324,7 +324,7 @@ const ManageNotificationsScreen = () => {
 
           {/* Role Selection */}
           <View style={styles.chipContainer}>
-            {['STUDENT', 'TEACHER', 'PARENT'].map((role) => (
+            {['STUDENT', 'TEACHER'].map((role) => (
               <TouchableOpacity
                 key={role}
                 style={[
@@ -571,25 +571,35 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    backgroundColor: '#f8f9fa',
   },
   section: {
     marginBottom: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
     marginBottom: 12,
   },
   subTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 12,
     marginBottom: 8,
   },
   input: {
-    borderRadius: 8,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
+    backgroundColor: '#ffffff',
   },
   inputLabel: {
     fontSize: 12,
@@ -606,9 +616,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
   },
   chipText: {
@@ -625,7 +635,7 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -635,11 +645,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   notificationCard: {
-    borderRadius: 8,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#edf0f5',
+    backgroundColor: '#ffffff',
   },
   notificationHeader: {
     flexDirection: 'row',
@@ -679,7 +690,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#e2e8f0',
   },
   targetTag: {
     fontSize: 11,
@@ -700,9 +711,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalContent: {
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 20,
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   modalTitle: {
     fontSize: 18,

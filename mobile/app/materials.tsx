@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
 
@@ -66,79 +67,132 @@ export default function MaterialsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Class Materials</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadMaterials(); }} />}
+    >
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Class Materials</Text>
+        <Text style={styles.heroText}>Access resources, notes, and documents shared by your teachers.</Text>
+      </View>
 
-      <FlatList
-        data={materials}
-        keyExtractor={(item) => item._id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadMaterials(); }} />}
-        contentContainerStyle={materials.length === 0 ? styles.center : styles.list}  
-        ListEmptyComponent={<Text style={styles.empty}>No materials available right now.</Text>}
-        renderItem={({ item }) => {
-          const isDownloading = downloadingId === item._id;
-          const kbSize = item.fileSize ? (item.fileSize / 1024).toFixed(1) : '0.0';
-          const uploadDate = item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString() : 'Unknown';
+      {materials.length === 0 ? (
+        <Text style={styles.empty}>No materials available right now.</Text>
+      ) : (
+        <View style={styles.list}>
+          {materials.map((item) => {
+            const isDownloading = downloadingId === item._id;
+            const kbSize = item.fileSize ? (item.fileSize / 1024).toFixed(1) : '0.0';
+            const uploadDate = item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString() : 'Unknown';
 
-          return (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.typeBadge}>{item.fileType || 'FILE'}</Text>
+            return (
+              <View key={item._id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.typeBadge}>{item.fileType || 'FILE'}</Text>
+                </View>
+
+                {item.description ? (
+                  <Text style={styles.descText} numberOfLines={2}>{item.description}</Text>
+                ) : null}
+
+                <View style={styles.metaRow}>
+                  <View style={styles.metaInline}>
+                    <Ionicons name="book-outline" size={14} color="#64748b" />
+                    <Text style={styles.metaText}>{item.subject?.name || 'Any Subject'}</Text>
+                  </View>
+                  <View style={styles.metaInline}>
+                    <Ionicons name="person-outline" size={14} color="#64748b" />
+                    <Text style={styles.metaText}>{item.teacher?.name || 'Staff'}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaSubText}>Uploaded: {uploadDate}</Text>
+                  <Text style={styles.metaSubText}>Size: {kbSize} KB</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.downloadBtn, isDownloading && styles.downloadBtnDisabled]}
+                  onPress={() => handleDownload(item)}
+                  disabled={isDownloading}
+                >
+                  <Ionicons name="download-outline" size={18} color="#ffffff" />
+                  <Text style={styles.downloadText}>
+                    {isDownloading ? 'Downloading...' : 'Download File'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-
-              {item.description ? (
-                <Text style={styles.descText} numberOfLines={2}>{item.description}</Text>
-              ) : null}
-
-              <View style={styles.metaRow}>
-                <Text style={styles.metaText}>📚 {item.subject?.name || 'Any Subject'}</Text>
-                <Text style={styles.metaText}>🧑‍🏫 {item.teacher?.name || 'Staff'}</Text>
-              </View>
-
-              <View style={styles.metaRow}>
-                <Text style={styles.metaSubText}>Uploaded: {uploadDate}</Text>
-                <Text style={styles.metaSubText}>Size: {kbSize} KB</Text>
-              </View>
-
-              <TouchableOpacity 
-                style={[styles.downloadBtn, isDownloading && styles.downloadBtnDisabled]} 
-                onPress={() => handleDownload(item)}
-                disabled={isDownloading}
-              >
-                <Text style={styles.downloadText}>
-                  {isDownloading ? 'Downloading...' : 'Download File'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        }}
-      />
-    </View>
+            );
+          })}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { fontSize: 20, fontWeight: 'bold', marginHorizontal: 20, marginTop: 30, marginBottom: 15, color: '#1f2937' },
-  list: { paddingHorizontal: 20, paddingBottom: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  content: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 28 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#f8f9fa' },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  header: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  heroText: { marginTop: 6, color: '#64748b', lineHeight: 20, fontSize: 14 },
+  list: { paddingBottom: 16 },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  title: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1, marginRight: 10 },
-  typeBadge: { backgroundColor: '#e0e7ff', color: '#3730a3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 11, fontWeight: 'bold', overflow: 'hidden' },
-  descText: { fontSize: 14, color: '#4b5563', marginBottom: 10 },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  metaText: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  metaSubText: { fontSize: 12, color: '#9ca3af' },
-  downloadBtn: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  downloadBtnDisabled: { backgroundColor: '#93c5fd' },
-  downloadText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  empty: { color: '#6b7280', fontSize: 15, textAlign: 'center' },
+  title: { fontSize: 16, fontWeight: '700', color: '#1f2937', flex: 1, marginRight: 10 },
+  typeBadge: { backgroundColor: '#edf2ff', color: '#2e3a8c', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 11, fontWeight: '700', overflow: 'hidden' },
+  descText: { fontSize: 14, color: '#475569', marginBottom: 10, lineHeight: 20 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 },
+  metaInline: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  metaText: { fontSize: 12, color: '#334155', fontWeight: '600' },
+  metaSubText: { fontSize: 12, color: '#64748b' },
+  downloadBtn: {
+    backgroundColor: '#3f51b5',
+    padding: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  downloadBtnDisabled: { opacity: 0.7 },
+  downloadText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
+  empty: { color: '#64748b', fontSize: 15, textAlign: 'center' },
 });

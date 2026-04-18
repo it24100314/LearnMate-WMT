@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import api from '../utils/api';
 
@@ -124,7 +125,7 @@ export default function ManageExamsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -132,15 +133,20 @@ export default function ManageExamsScreen() {
   if (isEditing && selectedExam) {
     return (
       <ScrollView style={styles.container}>
-        <Text style={styles.header}>Edit Exam</Text>
+        <View style={styles.heroCard}>
+          <Text style={styles.header}>Edit Exam</Text>
+          <Text style={styles.heroText}>Update exam details and deadline for students.</Text>
+        </View>
 
-        <View style={styles.form}>
+        <View style={styles.formCard}>
           <Text style={styles.label}>Title</Text>
           <TextInput
             style={styles.input}
             value={editTitle}
             onChangeText={setEditTitle}
             placeholder="Exam title"
+            placeholderTextColor="#8a94a6"
+            selectionColor="#3f51b5"
           />
 
           <Text style={styles.label}>Max Marks</Text>
@@ -149,6 +155,8 @@ export default function ManageExamsScreen() {
             value={editMaxMarks}
             onChangeText={setEditMaxMarks}
             keyboardType="numeric"
+            placeholderTextColor="#8a94a6"
+            selectionColor="#3f51b5"
           />
 
           <Text style={styles.label}>Pass Mark</Text>
@@ -157,11 +165,16 @@ export default function ManageExamsScreen() {
             value={editPassMark}
             onChangeText={setEditPassMark}
             keyboardType="numeric"
+            placeholderTextColor="#8a94a6"
+            selectionColor="#3f51b5"
           />
 
           <Text style={styles.label}>Deadline</Text>
           <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-            <Text>{editDeadline.toLocaleString()}</Text>
+            <View style={styles.deadlineRow}>
+              <Ionicons name="calendar-outline" size={16} color="#3f51b5" />
+              <Text style={styles.deadlineText}>{editDeadline.toLocaleString()}</Text>
+            </View>
           </TouchableOpacity>
           {showDatePicker && (
             <DateTimePicker
@@ -183,8 +196,10 @@ export default function ManageExamsScreen() {
             value={editInstructions}
             onChangeText={setEditInstructions}
             placeholder="Instructions (optional)"
+            placeholderTextColor="#8a94a6"
             multiline
             numberOfLines={4}
+            selectionColor="#3f51b5"
           />
 
           <View style={styles.buttonRow}>
@@ -193,9 +208,11 @@ export default function ManageExamsScreen() {
               onPress={saveEdit}
               disabled={updating}
             >
+              <Ionicons name="save-outline" size={18} color="#ffffff" />
               <Text style={styles.buttonText}>{updating ? 'Saving...' : 'Save Changes'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={cancelEdit}>
+              <Ionicons name="close-outline" size={18} color="#334155" />
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -206,7 +223,10 @@ export default function ManageExamsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Manage Exams</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Manage Exams</Text>
+        <Text style={styles.heroText}>Edit details or delete previously created exams.</Text>
+      </View>
 
       {exams.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -241,13 +261,15 @@ export default function ManageExamsScreen() {
                   style={[styles.actionButton, styles.editButton]}
                   onPress={() => startEdit(item)}
                 >
-                  <Text style={styles.actionButtonText}>✏️ Edit</Text>
+                  <Ionicons name="create-outline" size={16} color="#ffffff" />
+                  <Text style={styles.actionButtonText}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => deleteExam(item._id, item.title)}
                 >
-                  <Text style={styles.actionButtonText}>🗑️ Delete</Text>
+                  <Ionicons name="trash-outline" size={16} color="#ffffff" />
+                  <Text style={styles.actionButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -259,40 +281,72 @@ export default function ManageExamsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 22, fontWeight: 'bold', marginHorizontal: 20, marginTop: 20, marginBottom: 15, color: '#1f2937' },
-  listContent: { padding: 15 },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  header: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  heroText: { marginTop: 6, color: '#64748b', fontSize: 14, lineHeight: 20 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 20 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#9ca3af', fontStyle: 'italic' },
+  emptyText: { fontSize: 16, color: '#8a94a6', fontStyle: 'italic' },
   examCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
     padding: 15,
-    marginBottom: 12,
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2563eb',
+    marginBottom: 14,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   examHeader: { marginBottom: 10 },
   examTitle: { fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 4 },
-  examMeta: { fontSize: 13, color: '#6b7280' },
-  examInfo: { fontSize: 13, color: '#4b5563', marginTop: 6 },
-  examInstructions: { fontSize: 12, color: '#7c3aed', fontStyle: 'italic', marginTop: 8 },
+  examMeta: { fontSize: 13, color: '#64748b' },
+  examInfo: { fontSize: 13, color: '#475569', marginTop: 6 },
+  examInstructions: { fontSize: 12, color: '#3f51b5', fontStyle: 'italic', marginTop: 8 },
   actionRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  actionButton: { flex: 1, paddingVertical: 10, borderRadius: 6, alignItems: 'center' },
-  editButton: { backgroundColor: '#3b82f6' },
-  deleteButton: { backgroundColor: '#ef4444' },
-  actionButtonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  actionButton: { flex: 1, paddingVertical: 10, borderRadius: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  editButton: { backgroundColor: '#3f51b5' },
+  deleteButton: { backgroundColor: '#ff5252' },
+  actionButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
 
   form: { padding: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginTop: 15, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, fontSize: 14, backgroundColor: '#fff' },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  label: { fontSize: 14, fontWeight: '700', color: '#475569', marginTop: 15, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: '#d5dbe5', borderRadius: 14, padding: 12, fontSize: 14, backgroundColor: '#fff', color: '#1f2937' },
+  deadlineRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  deadlineText: { color: '#334155', fontSize: 14 },
   textArea: { textAlignVertical: 'top', paddingTop: 12 },
   buttonRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  button: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  saveButton: { backgroundColor: '#10b981' },
-  cancelButton: { backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#d1d5db' },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  cancelButtonText: { color: '#374151', fontWeight: '700', fontSize: 14 },
+  button: { flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  saveButton: { backgroundColor: '#3f51b5' },
+  cancelButton: { backgroundColor: '#f8f9fa', borderWidth: 1, borderColor: '#d5dbe5' },
+  buttonText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+  cancelButtonText: { color: '#334155', fontWeight: '700', fontSize: 14 },
 });

@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const PASSWORD_POLICY_PATTERN = /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-const REGISTRATION_ROLES = ['STUDENT', 'TEACHER', 'PARENT'];
+const REGISTRATION_ROLES = ['STUDENT', 'TEACHER'];
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', {
@@ -28,45 +28,11 @@ const normalizeIdList = (input) => {
   return [String(input)];
 };
 
-const attachChildrenToParent = async (parent, childIds) => {
-  if (!parent || parent.role !== 'PARENT') {
-    throw new Error('User is not a parent');
-  }
-
-  if (!childIds || childIds.length === 0) {
-    throw new Error('Parent must select at least one registered child');
-  }
-
-  const students = await User.find({
-    _id: { $in: childIds },
-    role: 'STUDENT'
-  });
-
-  if (!students || students.length !== childIds.length) {
-    throw new Error('One or more selected children are invalid or not students');
-  }
-
-  for (const student of students) {
-    if (student.parents && student.parents.length > 0) {
-      throw new Error(`Student ${student.name} is already linked to another parent`);
-    }
-  }
-
-  parent.children = students.map((student) => student._id);
-  await parent.save();
-
-  await User.updateMany(
-    { _id: { $in: students.map((student) => student._id) } },
-    { $addToSet: { parents: parent._id } }
-  );
-};
-
 const getRegisterOptions = async (req, res) => {
   try {
-    const [rawSchoolClasses, rawSubjects, students] = await Promise.all([
+    const [rawSchoolClasses, rawSubjects] = await Promise.all([
       SchoolClass.find().select('_id name').sort({ name: 1 }),
-      Subject.find().select('_id name').sort({ name: 1 }),
-      User.find({ role: 'STUDENT' }).select('_id name username parents').sort({ name: 1 })
+      Subject.find().select('_id name').sort({ name: 1 })
     ]);
 
     // Filter out duplicates by name
@@ -84,19 +50,10 @@ const getRegisterOptions = async (req, res) => {
       return true;
     });
 
-    const availableStudents = students
-      .filter((student) => !student.parents || student.parents.length === 0)
-      .map((student) => ({
-        _id: student._id,
-        name: student.name,
-        username: student.username
-      }));
-
     res.json({
       roles: REGISTRATION_ROLES,
       schoolClasses,
-      subjects,
-      students: availableStudents
+      subjects
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -114,8 +71,7 @@ const register = async (req, res) => {
       schoolClassId,
       subjectIds,
       teacherSubjectIds,
-      teacherClassIds,
-      childIds
+      teacherClassIds
     } = req.body;
 
     if (!username || username.trim() === '') {
@@ -139,7 +95,6 @@ const register = async (req, res) => {
 
     const normalizedStudentSubjectIds = normalizeIdList(subjectIds);
     const normalizedTeacherSubjectIds = normalizeIdList(teacherSubjectIds);
-    const normalizedChildIds = normalizeIdList(childIds);
     const normalizedTeacherClassIds = normalizeIdList(teacherClassIds);
 
     if (role === 'STUDENT' && normalizedStudentSubjectIds.length === 0) {
@@ -202,14 +157,6 @@ const register = async (req, res) => {
 
     const user = await User.create(userData);
 
-    if (role === 'PARENT') {
-      try {
-        await attachChildrenToParent(user, normalizedChildIds);
-      } catch (parentLinkError) {
-        return res.status(400).json({ message: `Registration failed: ${parentLinkError.message}` });
-      }
-    }
-
     if (user) {
       res.status(201).json({
         message: 'Registration successful! Please log in.',
@@ -261,8 +208,7 @@ const login = async (req, res) => {
     const redirectMap = {
       ADMIN: '/dashboard/admin',
       TEACHER: '/dashboard/teacher',
-      STUDENT: '/dashboard/student',
-      PARENT: '/dashboard/parent'
+      STUDENT: '/dashboard/student'
     };
 
     if (user) {

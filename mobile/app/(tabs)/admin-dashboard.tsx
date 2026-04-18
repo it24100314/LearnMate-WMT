@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
 
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>⚠️</Text>
+        <Ionicons name="alert-circle-outline" size={48} color="#ff5252" style={styles.errorIcon} />
         <Text style={styles.errorTitle}>Session Error</Text>
         <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={verifyAuth}>
@@ -53,94 +54,147 @@ export default function AdminDashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Admin Dashboard</Text>
-      <Text style={styles.subtitle}>Manage institution-wide exams, fees, and notifications.</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.title}>Admin Dashboard</Text>
+        <Text style={styles.subtitle}>Control exams, fees, and communication across your institute.</Text>
+      </View>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/exams')}>
-        <Text style={styles.cardTitle}>Exams</Text>
-        <Text style={styles.cardText}>Review all exam schedules and files.</Text>
-      </TouchableOpacity>
+      <View style={styles.grid}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/exams')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="document-text-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Exams</Text>
+          <Text style={styles.cardText}>Review all exam schedules.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/fees')}>
-        <Text style={styles.cardTitle}>Fees</Text>
-        <Text style={styles.cardText}>Create fee records and verify submitted payments.</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/fees')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="wallet-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Fees</Text>
+          <Text style={styles.cardText}>Manage records and payment slips.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/notifications')}>
-        <Text style={styles.cardTitle}>Notifications</Text>
-        <Text style={styles.cardText}>Broadcast updates to classes, roles, and subjects.</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/notifications')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="notifications-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Notifications</Text>
+          <Text style={styles.cardText}>Broadcast institute-wide updates.</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 26,
+    backgroundColor: '#f8f9fa',
     flexGrow: 1,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 24,
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#1f2937',
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 20,
+    color: '#64748b',
+    marginTop: 6,
+    lineHeight: 20,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    width: '48%',
+    borderRadius: 18,
     padding: 16,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#e8edff',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#1d4ed8',
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 6,
-    color: '#111827',
+    color: '#1f2937',
   },
   cardText: {
-    color: '#4b5563',
-    fontSize: 14,
+    color: '#64748b',
+    fontSize: 12,
+    lineHeight: 17,
+    minHeight: 34,
   },
-  errorText: {
-    fontSize: 60,
-    marginBottom: 20,
+  errorIcon: {
+    marginBottom: 14,
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#d32f2f',
+    color: '#ff5252',
     marginBottom: 10,
   },
   errorMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
     textAlign: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3f51b5',
     paddingHorizontal: 30,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 10,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 16,
   },

@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'],
+    enum: ['ADMIN', 'TEACHER', 'STUDENT'],
     required: true
   },
   active: {
@@ -45,21 +45,7 @@ const userSchema = new mongoose.Schema({
   assignedClasses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'SchoolClass'
-  }],
-  children: {
-    type: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }],
-    default: []
-  },
-  parents: {
-    type: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }],
-    default: []
-  }
+  }]
 }, {
   timestamps: true
 });

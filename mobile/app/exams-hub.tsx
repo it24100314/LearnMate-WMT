@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ExamsScreen() {
   const router = useRouter();
@@ -30,36 +31,36 @@ export default function ExamsScreen() {
   };
 
   // For students, just show the exams list directly
-  if (role === 'STUDENT' || role === 'PARENT' || role === 'ADMIN') {
+  if (role === 'STUDENT' || role === 'ADMIN') {
     return <ExamsListForStudents />;
   }
 
   // For teachers, show create and manage options
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Exams</Text>
-      <Text style={styles.subtitle}>Manage your exams</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Exams</Text>
+        <Text style={styles.subtitle}>Create new exams or manage your existing exam schedule.</Text>
+      </View>
 
       <View style={styles.optionsContainer}>
-        {/* Create New Exam */}
         <TouchableOpacity
           style={styles.optionCard}
           onPress={navigateToCreateExam}
         >
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>➕</Text>
+            <Ionicons name="add-circle-outline" size={34} color="#3f51b5" />
           </View>
           <Text style={styles.optionTitle}>Create New Exam</Text>
           <Text style={styles.optionDescription}>Create and upload a new exam for your students</Text>
         </TouchableOpacity>
 
-        {/* Manage Exams */}
         <TouchableOpacity
           style={styles.optionCard}
           onPress={navigateToManageExams}
         >
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={34} color="#3f51b5" />
           </View>
           <Text style={styles.optionTitle}>Manage Exams</Text>
           <Text style={styles.optionDescription}>Edit or delete your existing exams</Text>
@@ -74,11 +75,15 @@ function ExamsListForStudents() {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Exams</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Exams</Text>
+        <Text style={styles.subtitle}>Open your exam list and track your submissions.</Text>
+      </View>
       <TouchableOpacity
         style={styles.button}
         onPress={() => router.push('/exams')}
       >
+        <Ionicons name="document-text-outline" size={18} color="#ffffff" />
         <Text style={styles.buttonText}>View Exams</Text>
       </TouchableOpacity>
     </View>
@@ -86,27 +91,57 @@ function ExamsListForStudents() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { fontSize: 24, fontWeight: '700', marginHorizontal: 20, marginTop: 25, marginBottom: 6, color: '#1f2937' },
-  subtitle: { fontSize: 14, color: '#6b7280', marginHorizontal: 20, marginBottom: 25 },
-  
-  optionsContainer: { paddingHorizontal: 20, paddingBottom: 40 },
-  optionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 15,
-    elevation: 3,
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  header: { fontSize: 24, fontWeight: '800', color: '#1f2937' },
+  subtitle: { fontSize: 14, color: '#64748b', marginTop: 6, lineHeight: 20 },
+  
+  optionsContainer: { paddingHorizontal: 16, paddingBottom: 40 },
+  optionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 14,
+    elevation: 4,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   
   iconContainer: { marginBottom: 12, alignItems: 'center' },
-  icon: { fontSize: 40 },
   
   optionTitle: { fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 8, textAlign: 'center' },
-  optionDescription: { fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 18 },
+  optionDescription: { fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 18 },
 
-  button: { backgroundColor: '#2563eb', marginHorizontal: 20, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  button: {
+    backgroundColor: '#3f51b5',
+    marginHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  buttonText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
 });

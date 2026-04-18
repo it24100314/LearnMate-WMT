@@ -14,6 +14,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
 
@@ -192,32 +193,40 @@ export default function NotificationsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.heroCard}>
+        <Text style={styles.heroTitle}>Notifications</Text>
+        <Text style={styles.heroText}>Send announcements and stay updated with class communication.</Text>
+      </View>
+
       {canCreate && options ? (
         <View>
           <TouchableOpacity
             style={[styles.manageButton, { marginBottom: 12 }]}
             onPress={() => router.push('/manage-notifications')}
           >
-            <Text style={styles.manageButtonText}>📋 Manage Notifications</Text>
+            <Ionicons name="list-outline" size={18} color="#ffffff" />
+            <Text style={styles.manageButtonText}>Manage Notifications</Text>
           </TouchableOpacity>
 
           <View style={styles.composeCard}>
           <Text style={styles.sectionTitle}>Create Notification</Text>
 
-          <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} />
+          <TextInput style={styles.input} placeholder="Title" placeholderTextColor="#8a94a6" value={title} onChangeText={setTitle} selectionColor="#3f51b5" />
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Message"
+            placeholderTextColor="#8a94a6"
             multiline
             value={message}
             onChangeText={setMessage}
+            selectionColor="#3f51b5"
           />
 
           <Text style={styles.label}>Target Roles</Text>
@@ -262,10 +271,12 @@ export default function NotificationsScreen() {
           </View>
 
           <TouchableOpacity style={styles.attachmentButton} onPress={pickAttachment}>
+            <Ionicons name="document-attach-outline" size={18} color="#3f51b5" />
             <Text style={styles.attachmentText}>{attachment ? `Attached: ${attachment.name}` : 'Attach File (Optional)'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.submitButton} onPress={submitNotification} disabled={submitting}>
+            <Ionicons name="send-outline" size={18} color="#ffffff" />
             <Text style={styles.submitText}>{submitting ? 'Sending...' : 'Send Notification'}</Text>
           </TouchableOpacity>
           </View>
@@ -294,6 +305,7 @@ export default function NotificationsScreen() {
                 onPress={() => downloadAttachment(item)}
                 disabled={downloadingNotificationId === item._id}
               >
+                <Ionicons name="download-outline" size={16} color="#3f51b5" />
                 <Text style={styles.downloadButtonText}>
                   {downloadingNotificationId === item._id ? 'Downloading...' : 'Download Attachment'}
                 </Text>
@@ -310,7 +322,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
   },
   content: {
     padding: 16,
@@ -320,30 +332,58 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  heroText: {
+    marginTop: 6,
+    color: '#64748b',
+    lineHeight: 20,
+    fontSize: 14,
   },
   composeCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 18,
+    padding: 16,
     marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2563eb',
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: '800',
+    color: '#1f2937',
     marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderColor: '#d5dbe5',
+    borderRadius: 14,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginBottom: 8,
     backgroundColor: '#fff',
+    color: '#1f2937',
   },
   textArea: {
     minHeight: 84,
@@ -351,7 +391,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: '600',
-    color: '#374151',
+    color: '#475569',
     marginTop: 8,
     marginBottom: 6,
   },
@@ -362,18 +402,20 @@ const styles = StyleSheet.create({
   },
   chip: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 20,
+    borderColor: '#d5dbe5',
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     backgroundColor: '#ffffff',
   },
   chipSelected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    backgroundColor: '#3f51b5',
+    borderColor: '#3f51b5',
   },
   chipText: {
-    color: '#374151',
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
   },
   chipTextSelected: {
     color: '#ffffff',
@@ -382,88 +424,117 @@ const styles = StyleSheet.create({
   attachmentButton: {
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 8,
+    borderColor: '#cfd8ff',
+    borderRadius: 14,
     paddingVertical: 10,
     alignItems: 'center',
+    backgroundColor: '#edf2ff',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   attachmentText: {
-    color: '#2563eb',
+    color: '#3f51b5',
     fontWeight: '600',
   },
   submitButton: {
     marginTop: 10,
-    backgroundColor: '#10b981',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 10,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   submitText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   notificationCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
     marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#9ca3af',
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   unread: {
-    borderLeftColor: '#2563eb',
-    backgroundColor: '#eff6ff',
+    borderColor: '#cfd8ff',
+    backgroundColor: '#f5f7ff',
   },
   notificationTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1f2937',
     marginBottom: 4,
   },
   notificationMessage: {
-    color: '#374151',
+    color: '#475569',
     marginBottom: 8,
     lineHeight: 18,
   },
   meta: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#64748b',
     marginBottom: 2,
   },
   unreadText: {
     marginTop: 6,
-    color: '#1d4ed8',
+    color: '#3f51b5',
     fontSize: 12,
     fontWeight: '600',
   },
   downloadButton: {
     marginTop: 8,
-    alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 6,
+    borderColor: '#cfd8ff',
+    borderRadius: 12,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#edf2ff',
   },
   downloadButtonText: {
-    color: '#2563eb',
+    color: '#3f51b5',
     fontWeight: '600',
     fontSize: 12,
   },
   empty: {
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
     marginTop: 10,
   },
   manageButton: {
-    backgroundColor: '#7c3aed',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   manageButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: 14,
   },

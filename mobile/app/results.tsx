@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import api from '../utils/api';
+import { Ionicons } from '@expo/vector-icons';
 
 type Subject = { _id: string; name: string };
 type SchoolClass = { _id: string; name: string };
@@ -37,7 +38,7 @@ export default function MarksScreen() {
   useEffect(() => { loadMarks(); }, []);
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#007AFF" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color="#3f51b5" /></View>;
   }
 
   if (error) {
@@ -46,10 +47,15 @@ export default function MarksScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>My Results</Text>
       <FlatList
         data={marks}
         keyExtractor={(item) => item._id}
+        ListHeaderComponent={
+          <View style={styles.heroCard}>
+            <Text style={styles.header}>My Results</Text>
+            <Text style={styles.heroText}>Review your exam performance, pass status, and teacher feedback.</Text>
+          </View>
+        }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadMarks(); }} />}
         contentContainerStyle={marks.length === 0 ? styles.center : styles.list}  
         ListEmptyComponent={<Text style={styles.empty}>No marks available yet.</Text>}
@@ -69,7 +75,10 @@ export default function MarksScreen() {
               <Text style={styles.meta}>Exam: {item.exam?.title ?? '-'}</Text>
               <Text style={styles.meta}>Class: {item.exam?.schoolClass?.name ?? '-'}</Text>
               <View style={styles.scoreRow}>
-                <Text style={styles.scoreText}>Score: {item.score} / {maxMarks}</Text>
+                <View style={styles.scoreInline}>
+                  <Ionicons name="bar-chart-outline" size={16} color="#3f51b5" />
+                  <Text style={styles.scoreText}>Score: {item.score} / {maxMarks}</Text>
+                </View>
                 <Text style={styles.passMarkText}>Passing: {passMark}</Text>
               </View>
               {item.comments ? (
@@ -87,21 +96,46 @@ export default function MarksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { fontSize: 20, fontWeight: 'bold', marginHorizontal: 20, marginTop: 30, marginBottom: 15, color: '#1f2937' },
-  list: { paddingHorizontal: 20, paddingBottom: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  header: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  heroText: { marginTop: 6, color: '#64748b', fontSize: 14, lineHeight: 20 },
+  list: { paddingHorizontal: 16, paddingBottom: 20 },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  title: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 'bold', overflow: 'hidden' },
-  meta: { fontSize: 14, color: '#4b5563', marginBottom: 4 },
+  title: { fontSize: 16, fontWeight: '700', color: '#1f2937' },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, color: '#fff', fontSize: 11, fontWeight: '700', overflow: 'hidden' },
+  meta: { fontSize: 13, color: '#475569', marginBottom: 4 },
   scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  scoreText: { fontSize: 16, fontWeight: '700', color: '#1d4ed8' },
-  passMarkText: { fontSize: 13, color: '#6b7280' },
-  commentsBox: { marginTop: 12, backgroundColor: '#f9fafb', padding: 10, borderRadius: 6 },
-  commentsLabel: { fontSize: 12, fontWeight: 'bold', color: '#374151', marginBottom: 2 },
-  commentsText: { fontSize: 13, color: '#4b5563', fontStyle: 'italic' },
-  errorText: { color: '#ef4444', fontSize: 16, textAlign: 'center' },
-  empty: { color: '#6b7280', fontSize: 15, textAlign: 'center' },
+  scoreInline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  scoreText: { fontSize: 15, fontWeight: '700', color: '#3f51b5' },
+  passMarkText: { fontSize: 12, color: '#64748b' },
+  commentsBox: { marginTop: 12, backgroundColor: '#f8f9fa', padding: 10, borderRadius: 10 },
+  commentsLabel: { fontSize: 12, fontWeight: '700', color: '#334155', marginBottom: 2 },
+  commentsText: { fontSize: 13, color: '#475569', fontStyle: 'italic' },
+  errorText: { color: '#ff5252', fontSize: 16, textAlign: 'center' },
+  empty: { color: '#64748b', fontSize: 15, textAlign: 'center' },
 });

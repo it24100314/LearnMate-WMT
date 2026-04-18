@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 
 type NamedItem = { _id: string; name: string };
@@ -100,7 +101,7 @@ export default function ManageTimetableScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -110,88 +111,102 @@ export default function ManageTimetableScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.header}>Manage Timetable</Text>
-
-      <Text style={styles.label}>Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., Math Double Period"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <Text style={styles.label}>Select Class</Text>
-      <View style={styles.optionWrap}>
-        {uniqueClasses.map((item) => (
-          <TouchableOpacity
-            key={item._id}
-            style={[styles.optionChip, classId === item._id && styles.optionChipSelected]}
-            onPress={() => setClassId(item._id)}
-          >
-            <Text style={[styles.optionText, classId === item._id && styles.optionTextSelected]}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Manage Timetable</Text>
+        <Text style={styles.heroText}>Create new sessions and review current weekly schedules.</Text>
       </View>
 
-      <Text style={styles.label}>Select Subject</Text>
-      <View style={styles.optionWrap}>
-        {uniqueSubjects.map((item) => (
-          <TouchableOpacity
-            key={item._id}
-            style={[styles.optionChip, subjectId === item._id && styles.optionChipSelected]}
-            onPress={() => setSubjectId(item._id)}
-          >
-            <Text style={[styles.optionText, subjectId === item._id && styles.optionTextSelected]}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.formCard}>
+        <Text style={styles.label}>Title</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., Math Double Period"
+          placeholderTextColor="#8a94a6"
+          value={title}
+          onChangeText={setTitle}
+          selectionColor="#3f51b5"
+        />
+
+        <Text style={styles.label}>Select Class</Text>
+        <View style={styles.optionWrap}>
+          {uniqueClasses.map((item) => (
+            <TouchableOpacity
+              key={item._id}
+              style={[styles.optionChip, classId === item._id && styles.optionChipSelected]}
+              onPress={() => setClassId(item._id)}
+            >
+              <Text style={[styles.optionText, classId === item._id && styles.optionTextSelected]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Select Subject</Text>
+        <View style={styles.optionWrap}>
+          {uniqueSubjects.map((item) => (
+            <TouchableOpacity
+              key={item._id}
+              style={[styles.optionChip, subjectId === item._id && styles.optionChipSelected]}
+              onPress={() => setSubjectId(item._id)}
+            >
+              <Text style={[styles.optionText, subjectId === item._id && styles.optionTextSelected]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Select Day</Text>
+        <View style={styles.optionWrap}>
+          {DAYS.map((d) => (
+            <TouchableOpacity
+              key={d}
+              style={[styles.optionChip, day === d && styles.optionChipSelected]}
+              onPress={() => setDay(d)}
+            >
+              <Text style={[styles.optionText, day === d && styles.optionTextSelected]}>
+                {d.charAt(0) + d.slice(1).toLowerCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Start Time (HH:MM)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="08:00"
+          placeholderTextColor="#8a94a6"
+          value={startTime}
+          onChangeText={setStartTime}
+          selectionColor="#3f51b5"
+        />
+
+        <Text style={styles.label}>End Time (HH:MM)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="09:00"
+          placeholderTextColor="#8a94a6"
+          value={endTime}
+          onChangeText={setEndTime}
+          selectionColor="#3f51b5"
+        />
+
+        <Text style={styles.label}>Room (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., Room 101"
+          placeholderTextColor="#8a94a6"
+          value={room}
+          onChangeText={setRoom}
+          selectionColor="#3f51b5"
+        />
+
+        <TouchableOpacity style={styles.uploadBtn} onPress={handleCreate} disabled={saving}>
+          <Ionicons name="add-circle-outline" size={20} color="#ffffff" />
+          <Text style={styles.uploadText}>{saving ? 'Saving...' : 'Add Session'}</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.label}>Select Day</Text>
-      <View style={styles.optionWrap}>
-        {DAYS.map((d) => (
-          <TouchableOpacity
-            key={d}
-            style={[styles.optionChip, day === d && styles.optionChipSelected]}
-            onPress={() => setDay(d)}
-          >
-            <Text style={[styles.optionText, day === d && styles.optionTextSelected]}>
-              {d.charAt(0) + d.slice(1).toLowerCase()}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Start Time (HH:MM)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="08:00"
-        value={startTime}
-        onChangeText={setStartTime}
-      />
-
-      <Text style={styles.label}>End Time (HH:MM)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="09:00"
-        value={endTime}
-        onChangeText={setEndTime}
-      />
-
-      <Text style={styles.label}>Room (Optional)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., Room 101"
-        value={room}
-        onChangeText={setRoom}
-      />
-
-      <TouchableOpacity style={styles.uploadBtn} onPress={handleCreate} disabled={saving}>
-        <Text style={styles.uploadText}>{saving ? 'Saving...' : 'Add Session'}</Text>
-      </TouchableOpacity>
 
       <View style={styles.listContainer}>
         <Text style={styles.listHeader}>Current Schedule</Text>
@@ -214,34 +229,64 @@ export default function ManageTimetableScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   content: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 40,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    marginTop: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroText: {
+    marginTop: 6,
+    color: '#64748b',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    marginTop: 10,
+    fontWeight: '800',
+    color: '#1f2937',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#d5dbe5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 12,
-    fontSize: 16,
+    fontSize: 15,
+    color: '#1f2937',
+    backgroundColor: '#ffffff',
   },
   label: {
     fontWeight: '700',
-    color: '#374151',
+    color: '#334155',
     marginBottom: 8,
     marginTop: 6,
   },
@@ -253,66 +298,80 @@ const styles = StyleSheet.create({
   },
   optionChip: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 18,
+    borderColor: '#d5dbe5',
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    paddingVertical: 9,
+    backgroundColor: '#ffffff',
   },
   optionChipSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#2563eb',
+    borderColor: '#3f51b5',
+    backgroundColor: '#3f51b5',
   },
   optionText: {
-    color: '#374151',
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
   },
   optionTextSelected: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   uploadBtn: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#3f51b5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   uploadText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   listContainer: {
     marginTop: 30,
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    paddingTop: 20,
+    paddingTop: 8,
   },
   listHeader: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginBottom: 15,
-    color: '#333'
+    color: '#1f2937',
   },
   card: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   cardInfo: {
     flex: 1,
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 4,
+    color: '#1f2937',
   },
   cardSub: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 13,
+    color: '#64748b',
     marginBottom: 2,
   }
 });

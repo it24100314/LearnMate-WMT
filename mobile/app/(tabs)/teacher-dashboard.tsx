@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
 
@@ -33,7 +34,7 @@ export default function TeacherDashboard() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3f51b5" />
       </View>
     );
   }
@@ -41,7 +42,7 @@ export default function TeacherDashboard() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>⚠️</Text>
+        <Ionicons name="alert-circle-outline" size={48} color="#ff5252" style={styles.errorIcon} />
         <Text style={styles.errorTitle}>Session Error</Text>
         <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={verifyAuth}>
@@ -53,106 +54,171 @@ export default function TeacherDashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Teacher Dashboard</Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Teacher Dashboard</Text>
+        <Text style={styles.subtitle}>Manage classes, schedule, exams, attendance, marks, and materials.</Text>
+      </View>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/classes')}>
-        <Text style={styles.cardTitle}>My Classes</Text>
-        <Text style={styles.cardDesc}>Manage your assigned classes</Text>
-      </TouchableOpacity>
+      <View style={styles.grid}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/classes')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="people-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>My Classes</Text>
+          <Text style={styles.cardDesc}>Manage assigned classrooms.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-timetable')}>
-        <Text style={styles.cardTitle}>Manage Timetable</Text>
-        <Text style={styles.cardDesc}>View your schedule and add new sessions</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-timetable')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="calendar-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Manage Timetable</Text>
+          <Text style={styles.cardDesc}>Plan your class schedule.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/exams-hub')}>
-        <Text style={styles.cardTitle}>Exams</Text>
-        <Text style={styles.cardDesc}>Create and manage exams for your subjects</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/exams-hub')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="document-text-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Exams</Text>
+          <Text style={styles.cardDesc}>Create and manage exams.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/mark-attendance')}>
-        <Text style={styles.cardTitle}>Mark Attendance</Text>
-        <Text style={styles.cardDesc}>Take daily attendance for your classes</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/enter-marks')}>
-        <Text style={styles.cardTitle}>Enter Marks</Text>
-        <Text style={styles.cardDesc}>Submit bulk exam scores</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/mark-attendance')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="checkmark-done-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Mark Attendance</Text>
+          <Text style={styles.cardDesc}>Record daily attendance.</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card} onPress={() => router.push('/upload-materials')}>
-        <Text style={styles.cardTitle}>Upload Materials</Text>
-        <Text style={styles.cardDesc}>Share study materials and resources</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/enter-marks')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="create-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Enter Marks</Text>
+          <Text style={styles.cardDesc}>Submit exam scores quickly.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/upload-materials')}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="cloud-upload-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Upload Materials</Text>
+          <Text style={styles.cardDesc}>Share files with students.</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 26,
+    backgroundColor: '#f8f9fa',
+    minHeight: '100%',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 24,
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  subtitle: {
+    marginTop: 6,
+    color: '#64748b',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    marginTop: 20,
+    fontWeight: '800',
+    color: '#1f2937',
   },
   card: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderLeftWidth: 5,
-    borderLeftColor: '#007AFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#ffffff',
+    width: '48%',
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#e8edff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#1f2937',
   },
   cardDesc: {
-    color: '#666',
+    color: '#64748b',
+    fontSize: 12,
+    lineHeight: 17,
+    minHeight: 34,
   },
-  errorText: {
-    fontSize: 60,
-    marginBottom: 20,
+  errorIcon: {
+    marginBottom: 14,
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#d32f2f',
+    color: '#ff5252',
     marginBottom: 10,
   },
   errorMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
     textAlign: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3f51b5',
     paddingHorizontal: 30,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 10,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 16,
   },

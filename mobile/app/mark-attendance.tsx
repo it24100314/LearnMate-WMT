@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Alert,
   TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -125,91 +126,93 @@ export default function MarkAttendanceScreen() {
   };
 
   if (loading) {
-    return <ActivityIndicator style={styles.center} size="large" />;
+    return <ActivityIndicator style={styles.center} size="large" color="#3f51b5" />;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mark Attendance</Text>
-
-      <Text style={styles.label}>Class</Text>
-      <View style={styles.optionWrap}>
-        {classes.map((item) => (
-          <TouchableOpacity
-            key={item._id}
-            style={[styles.optionChip, selectedClassId === item._id && styles.optionChipSelected]}
-            onPress={() => setSelectedClassId(item._id)}
-          >
-            <Text style={selectedClassId === item._id ? styles.optionTextSelected : styles.optionText}>{item.name}</Text>
-          </TouchableOpacity>
-        ))}
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.heroCard}>
+        <Text style={styles.header}>Mark Attendance</Text>
+        <Text style={styles.heroText}>Load the class roster and mark present or absent in one place.</Text>
       </View>
 
-      <Text style={styles.label}>Subject</Text>
-      <View style={styles.optionWrap}>
-        <TouchableOpacity
-          style={[styles.optionChip, selectedSubjectId === '' && styles.optionChipSelected]}
-          onPress={() => setSelectedSubjectId('')}
-        >
-          <Text style={selectedSubjectId === '' ? styles.optionTextSelected : styles.optionText}>General</Text>
+      <View style={styles.formCard}>
+        <Text style={styles.label}>Class</Text>
+        <View style={styles.optionWrap}>
+          {classes.map((item) => (
+            <TouchableOpacity
+              key={item._id}
+              style={[styles.optionChip, selectedClassId === item._id && styles.optionChipSelected]}
+              onPress={() => setSelectedClassId(item._id)}
+            >
+              <Text style={selectedClassId === item._id ? styles.optionTextSelected : styles.optionText}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Subject</Text>
+        <View style={styles.optionWrap}>
+          <TouchableOpacity
+            style={[styles.optionChip, selectedSubjectId === '' && styles.optionChipSelected]}
+            onPress={() => setSelectedSubjectId('')}
+          >
+            <Text style={selectedSubjectId === '' ? styles.optionTextSelected : styles.optionText}>General</Text>
+          </TouchableOpacity>
+          {subjects.map((item) => (
+            <TouchableOpacity
+              key={item._id}
+              style={[styles.optionChip, selectedSubjectId === item._id && styles.optionChipSelected]}
+              onPress={() => setSelectedSubjectId(item._id)}
+            >
+              <Text style={selectedSubjectId === item._id ? styles.optionTextSelected : styles.optionText}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
+        <TextInput
+          style={styles.input}
+          value={selectedDate}
+          onChangeText={setSelectedDate}
+          selectionColor="#3f51b5"
+        />
+
+        <TouchableOpacity style={styles.loadButton} onPress={loadRoster}>
+          <Ionicons name="refresh-outline" size={18} color="#ffffff" />
+          <Text style={styles.loadButtonText}>Load Roster</Text>
         </TouchableOpacity>
-        {subjects.map((item) => (
-          <TouchableOpacity
-            key={item._id}
-            style={[styles.optionChip, selectedSubjectId === item._id && styles.optionChipSelected]}
-            onPress={() => setSelectedSubjectId(item._id)}
-          >
-            <Text style={selectedSubjectId === item._id ? styles.optionTextSelected : styles.optionText}>{item.name}</Text>
-          </TouchableOpacity>
-        ))}
       </View>
-
-      <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-      <TextInput
-        style={styles.input}
-        value={selectedDate}
-        onChangeText={setSelectedDate}
-      />
-
-      <TouchableOpacity style={styles.loadButton} onPress={loadRoster}>
-        <Text style={styles.loadButtonText}>Load Roster</Text>
-      </TouchableOpacity>
 
       {students.length === 0 ? (
         <View style={styles.emptyBlock}>
           <Text style={styles.emptyText}>Select class and subject, then load roster.</Text>
         </View>
       ) : (
-        <View style={{ flex: 1 }}>
+        <View style={styles.rosterCard}>
           <Text style={styles.selectionSummary}>
             {selectedClass?.name || 'Class'} {selectedSubject ? `- ${selectedSubject.name}` : '- General'}
           </Text>
 
-          <FlatList
-            data={students}
-            keyExtractor={(item) => item._id}
-            renderItem={({ item }) => (
-              <View style={styles.studentCard}>
-                <Text style={styles.studentName}>{item.name}</Text>
-                <View style={styles.btnGroup}>
-                  <TouchableOpacity
-                    style={[styles.btn, styles.presentBtn]}
-                    onPress={() => setPresentMap((prev) => ({ ...prev, [item._id]: true }))}
-                  >
-                    <Text style={styles.btnText}>Present</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.btn, styles.absentBtn]}
-                    onPress={() => setPresentMap((prev) => ({ ...prev, [item._id]: false }))}
-                  >
-                    <Text style={styles.btnText}>Absent</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.stateText}>{presentMap[item._id] ? 'Marked Present' : 'Marked Absent'}</Text>
+          {students.map((item) => (
+            <View key={item._id} style={styles.studentCard}>
+              <Text style={styles.studentName}>{item.name}</Text>
+              <View style={styles.btnGroup}>
+                <TouchableOpacity
+                  style={[styles.btn, styles.presentBtn]}
+                  onPress={() => setPresentMap((prev) => ({ ...prev, [item._id]: true }))}
+                >
+                  <Text style={styles.btnText}>Present</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btn, styles.absentBtn]}
+                  onPress={() => setPresentMap((prev) => ({ ...prev, [item._id]: false }))}
+                >
+                  <Text style={styles.btnText}>Absent</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            ListEmptyComponent={<Text>No students in this class.</Text>}
-          />
+              <Text style={styles.stateText}>{presentMap[item._id] ? 'Marked Present' : 'Marked Absent'}</Text>
+            </View>
+          ))}
 
           <Text style={styles.label}>Session Notes</Text>
           <TextInput
@@ -218,37 +221,87 @@ export default function MarkAttendanceScreen() {
             onChangeText={setSessionNotes}
             multiline
             placeholder="Optional notes for this attendance session"
+            placeholderTextColor="#8a94a6"
+            selectionColor="#3f51b5"
           />
 
           <TouchableOpacity style={styles.submitButton} onPress={submitAttendance} disabled={submitting}>
+            <Ionicons name="save-outline" size={18} color="#ffffff" />
             <Text style={styles.submitButtonText}>{submitting ? 'Submitting...' : 'Save Attendance'}</Text>
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 28,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  heroCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 15,
+    marginBottom: 14,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+  },
+  rosterCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 15,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#edf0f5',
   },
   header: {
     fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontWeight: '800',
+    marginBottom: 2,
+    color: '#1f2937',
+  },
+  heroText: {
+    color: '#64748b',
+    lineHeight: 20,
+    fontSize: 14,
   },
   label: {
     marginTop: 8,
     marginBottom: 6,
-    color: '#374151',
-    fontWeight: '600',
+    color: '#475569',
+    fontWeight: '700',
   },
   optionWrap: {
     flexDirection: 'row',
@@ -258,107 +311,129 @@ const styles = StyleSheet.create({
   },
   optionChip: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 18,
+    borderColor: '#d5dbe5',
+    borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    paddingVertical: 9,
+    backgroundColor: '#ffffff',
   },
   optionChipSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#2563eb',
+    borderColor: '#3f51b5',
+    backgroundColor: '#3f51b5',
   },
   optionText: {
-    color: '#374151',
+    color: '#334155',
+    fontWeight: '600',
+    fontSize: 13,
   },
   optionTextSelected: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
+    borderColor: '#d5dbe5',
+    borderRadius: 14,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    paddingVertical: 10,
+    backgroundColor: '#ffffff',
     marginBottom: 8,
+    color: '#1f2937',
   },
   textArea: {
-    minHeight: 70,
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   loadButton: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 10,
     alignItems: 'center',
     marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   loadButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   selectionSummary: {
     fontWeight: '700',
     marginBottom: 8,
-    color: '#1f2937',
+    color: '#334155',
   },
   emptyBlock: {
     padding: 18,
-    borderRadius: 10,
-    backgroundColor: '#eef2ff',
+    borderRadius: 18,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#edf0f5',
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   emptyText: {
-    color: '#374151',
+    color: '#64748b',
   },
   submitButton: {
-    backgroundColor: '#059669',
-    borderRadius: 8,
+    backgroundColor: '#3f51b5',
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1f2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   submitButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '700',
   },
   studentCard: {
-    borderRadius: 8,
-    marginBottom: 6,
+    borderRadius: 16,
+    marginBottom: 10,
     backgroundColor: '#ffffff',
     padding: 15,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#edf0f5',
   },
   studentName: {
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 10,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#1f2937',
   },
   btnGroup: {
     flexDirection: 'row',
+    gap: 8,
   },
   btn: {
     paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-    marginRight: 10,
+    paddingVertical: 9,
+    borderRadius: 12,
   },
   presentBtn: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#16a34a',
   },
   absentBtn: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#ff5252',
   },
   btnText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: '#ffffff',
+    fontWeight: '700',
   },
   stateText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#374151',
+    color: '#475569',
   },
 });

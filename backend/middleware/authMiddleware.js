@@ -12,8 +12,6 @@ const protect = async (req, res, next) => {
         .select('-password')
         .populate('schoolClass', 'name')
         .populate('subjects', 'name')
-        .populate('children', '_id name username role schoolClass')
-        .populate('parents', '_id name username role')
         .populate('assignedClasses', 'name');
 
       if (!user) {
