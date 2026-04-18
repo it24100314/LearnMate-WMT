@@ -473,54 +473,18 @@ const createNotificationForStudentsInClasses = async ({
 
 /**
  * Retrieve notifications visible to a specific user
- * Based on their role and class/subject memberships
+ * Visibility is recipient-scoped (targetUser == current user)
  */
 const getVisibleNotificationsForUser = async (user) => {
   if (!user || !user._id) {
     return [];
   }
 
-  if (user.role === 'ADMIN') {
-    // Admin sees all notifications (SYSTEM + those created by any admin)
-    return Notification.find({ type: 'SYSTEM' })
-      .sort({ createdAt: -1 })
-      .populate('targetClass', 'name')
-      .populate('targetUser', 'name role')
-      .populate('createdBy', 'name role');
-  }
-
-  if (user.role === 'TEACHER') {
-    // Teacher sees notifications sent to their role
-    return Notification.find({
-      $or: [
-        { targetRole: 'TEACHER' },
-        { targetRole: null, createdBy: user._id }, // Their own notifications
-      ],
-    })
-      .sort({ createdAt: -1 })
-      .populate('targetClass', 'name')
-      .populate('targetUser', 'name role')
-      .populate('createdBy', 'name role');
-  }
-
-  if (user.role === 'STUDENT') {
-    // Student sees:
-    // 1. Notifications sent to their class
-    // 2. Notifications sent to STUDENT role (all students)
-    // 3. Notifications sent to them individually
-    return Notification.find({
-      $or: [
-        { targetClass: user.schoolClass, targetRole: 'STUDENT' },
-        { targetRole: 'STUDENT' },
-        { targetUser: user._id },
-      ],
-    })
-      .sort({ createdAt: -1 })
-      .populate('targetClass', 'name')
-      .populate('createdBy', 'name role');
-  }
-
-  return [];
+  return Notification.find({ targetUser: user._id })
+    .sort({ createdAt: -1 })
+    .populate('targetClass', 'name')
+    .populate('targetUser', 'name role')
+    .populate('createdBy', 'name role');
 };
 
 module.exports = {

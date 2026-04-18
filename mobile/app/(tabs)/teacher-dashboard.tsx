@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, View } from 'react-native';
+import { ScrollView, Text, StyleSheet, TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
@@ -56,7 +56,7 @@ export default function TeacherDashboard() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.heroCard}>
         <Text style={styles.header}>Teacher Dashboard</Text>
-        <Text style={styles.subtitle}>Manage classes, schedule, exams, attendance, marks, and materials.</Text>
+        <Text style={styles.subtitle}>Manage classes, schedule, exams, attendance, marks, materials, and announcements.</Text>
       </View>
 
       <View style={styles.grid}>
@@ -106,6 +106,22 @@ export default function TeacherDashboard() {
           </View>
           <Text style={styles.cardTitle}>Upload Materials</Text>
           <Text style={styles.cardDesc}>Share files with students.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-notifications?mode=compose' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="megaphone-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Create Announcement</Text>
+          <Text style={styles.cardDesc}>Send announcements to selected classes and subjects.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/notifications' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="mail-unread-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Inbox</Text>
+          <Text style={styles.cardDesc}>Read incoming notifications and alerts.</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

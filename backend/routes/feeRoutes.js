@@ -7,6 +7,7 @@ const {
   updateFee,
   deleteFee,
   verifyFee,
+  getMyFees,
   searchFees,
   studentPay,
   createSubjectFee,
@@ -21,6 +22,7 @@ const paymentSlipUpload = buildUploader('payment-slips', {
 router.use(protect);
 
 router.get('/list', authorize('STUDENT', 'ADMIN'), listFees);
+router.get('/my-fees', authorize('STUDENT'), getMyFees);
 router.get('/options', authorize('ADMIN'), getFeeOptions);
 router.get('/search', authorize('ADMIN', 'STUDENT'), searchFees);
 
@@ -29,6 +31,7 @@ router.put('/edit/:id', authorize('ADMIN'), updateFee);
 router.delete('/delete/:id', authorize('ADMIN'), deleteFee);
 router.post('/verify/:id', authorize('ADMIN'), verifyFee);
 
+router.post('/upload-slip', authorize('STUDENT'), paymentSlipUpload, studentPay);
 router.post('/student-pay', authorize('STUDENT'), paymentSlipUpload, studentPay);
 router.post('/create-subject-fee', authorize('ADMIN'), createSubjectFee);
 

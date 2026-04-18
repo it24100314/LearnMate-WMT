@@ -16,6 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as SecureStore from 'expo-secure-store';
+import { useLocalSearchParams } from 'expo-router';
 import api from '@/utils/api';
 
 interface SchoolClass {
@@ -40,6 +41,11 @@ interface Notification {
 }
 
 const ManageNotificationsScreen = () => {
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const modeParam = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const mode = modeParam === 'manage' ? 'manage' : 'compose';
+  const showComposeSection = mode !== 'manage';
+
   const colorScheme = useColorScheme();
   const backgroundColor = Colors[colorScheme ?? 'light'].background;
   const textColor = Colors[colorScheme ?? 'light'].text;
@@ -56,7 +62,6 @@ const ManageNotificationsScreen = () => {
   const [allClasses, setAllClasses] = useState<SchoolClass[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [sentNotifications, setSentNotifications] = useState<Notification[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -71,11 +76,10 @@ const ManageNotificationsScreen = () => {
   useEffect(() => {
     const checkRole = async () => {
       const role = await SecureStore.getItemAsync('userRole');
-      const id = await SecureStore.getItemAsync('userId');
-      setCurrentUser({ role, id });
 
       if (role !== 'TEACHER' && role !== 'ADMIN') {
         Alert.alert('Access Denied', 'Only teachers and admins can manage notifications');
+        setLoading(false);
         return;
       }
 
@@ -88,7 +92,6 @@ const ManageNotificationsScreen = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = await SecureStore.getItemAsync('userToken');
 
       // Get options (classes and subjects)
       const optionsResponse = await api.get('/notifications/options');
@@ -273,177 +276,181 @@ const ManageNotificationsScreen = () => {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Create New Notification Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Create New Notification</ThemedText>
+        {showComposeSection ? (
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Create New Notification</ThemedText>
 
-          {/* Title Input */}
-          <View
-            style={[
-              styles.input,
-              {
-                borderColor: tintColor,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <ThemedText style={styles.inputLabel}>Title</ThemedText>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Enter notification title"
-              style={{ color: textColor }}
-              placeholderTextColor={textColor + '99'}
-            />
-          </View>
+            {/* Title Input */}
+            <View
+              style={[
+                styles.input,
+                {
+                  borderColor: tintColor,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <ThemedText style={styles.inputLabel}>Title</ThemedText>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Enter notification title"
+                style={{ color: textColor }}
+                placeholderTextColor={textColor + '99'}
+              />
+            </View>
 
-          {/* Message Input */}
-          <View
-            style={[
-              styles.input,
-              styles.messageInput,
-              {
-                borderColor: tintColor,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <ThemedText style={styles.inputLabel}>Message</ThemedText>
-            <TextInput
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Enter notification message"
-              multiline
-              numberOfLines={4}
-              style={{ color: textColor }}
-              placeholderTextColor={textColor + '99'}
-            />
-          </View>
+            {/* Message Input */}
+            <View
+              style={[
+                styles.input,
+                styles.messageInput,
+                {
+                  borderColor: tintColor,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <ThemedText style={styles.inputLabel}>Message</ThemedText>
+              <TextInput
+                value={message}
+                onChangeText={setMessage}
+                placeholder="Enter notification message"
+                multiline
+                numberOfLines={4}
+                style={{ color: textColor }}
+                placeholderTextColor={textColor + '99'}
+              />
+            </View>
 
-          {/* Select Target Audiences */}
-          <ThemedText style={styles.subTitle}>Select Target Audience</ThemedText>
+            {/* Select Target Audiences */}
+            <ThemedText style={styles.subTitle}>Select Target Audience</ThemedText>
 
-          {/* Role Selection */}
-          <View style={styles.chipContainer}>
-            {['STUDENT', 'TEACHER'].map((role) => (
-              <TouchableOpacity
-                key={role}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: targetRoles.includes(role)
-                      ? tintColor
-                      : tintColor + '22',
-                    borderColor: tintColor,
-                  },
-                ]}
-                onPress={() => handleToggleRole(role)}
-              >
-                <ThemedText
+            {/* Role Selection */}
+            <View style={styles.chipContainer}>
+              {['STUDENT', 'TEACHER'].map((role) => (
+                <TouchableOpacity
+                  key={role}
                   style={[
-                    styles.chipText,
+                    styles.chip,
                     {
-                      color: targetRoles.includes(role) ? '#fff' : textColor,
+                      backgroundColor: targetRoles.includes(role)
+                        ? tintColor
+                        : tintColor + '22',
+                      borderColor: tintColor,
                     },
                   ]}
+                  onPress={() => handleToggleRole(role)}
                 >
-                  {role}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Class Selection (if STUDENT is selected) */}
-          {targetRoles.includes('STUDENT') && allClasses.length > 0 && (
-            <View style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Select Classes/Grades</ThemedText>
-              <View style={styles.chipContainer}>
-                {allClasses.map((cls) => (
-                  <TouchableOpacity
-                    key={cls._id}
+                  <ThemedText
                     style={[
-                      styles.chip,
+                      styles.chipText,
                       {
-                        backgroundColor: selectedClasses.includes(cls._id)
-                          ? tintColor
-                          : tintColor + '22',
-                        borderColor: tintColor,
+                        color: targetRoles.includes(role) ? '#fff' : textColor,
                       },
                     ]}
-                    onPress={() => handleToggleClass(cls._id)}
                   >
-                    <ThemedText
+                    {role}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Class Selection (if STUDENT is selected) */}
+            {targetRoles.includes('STUDENT') && allClasses.length > 0 && (
+              <View style={styles.filterSection}>
+                <ThemedText style={styles.filterLabel}>Select Classes/Grades</ThemedText>
+                <View style={styles.chipContainer}>
+                  {allClasses.map((cls) => (
+                    <TouchableOpacity
+                      key={cls._id}
                       style={[
-                        styles.chipText,
+                        styles.chip,
                         {
-                          color: selectedClasses.includes(cls._id)
-                            ? '#fff'
-                            : textColor,
+                          backgroundColor: selectedClasses.includes(cls._id)
+                            ? tintColor
+                            : tintColor + '22',
+                          borderColor: tintColor,
                         },
                       ]}
+                      onPress={() => handleToggleClass(cls._id)}
                     >
-                      {cls.name}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
+                      <ThemedText
+                        style={[
+                          styles.chipText,
+                          {
+                            color: selectedClasses.includes(cls._id)
+                              ? '#fff'
+                              : textColor,
+                          },
+                        ]}
+                      >
+                        {cls.name}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
-
-          {/* Subject Selection (if STUDENT is selected) */}
-          {targetRoles.includes('STUDENT') && allSubjects.length > 0 && (
-            <View style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Select Subjects</ThemedText>
-              <View style={styles.chipContainer}>
-                {allSubjects.map((subj) => (
-                  <TouchableOpacity
-                    key={subj._id}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: selectedSubjects.includes(subj._id)
-                          ? tintColor
-                          : tintColor + '22',
-                        borderColor: tintColor,
-                      },
-                    ]}
-                    onPress={() => handleToggleSubject(subj._id)}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.chipText,
-                        {
-                          color: selectedSubjects.includes(subj._id)
-                            ? '#fff'
-                            : textColor,
-                        },
-                      ]}
-                    >
-                      {subj.name}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Send Button */}
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: tintColor }]}
-            onPress={handleSendNotification}
-            disabled={sending}
-          >
-            {sending ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <ThemedText style={styles.buttonText}>Send Notification</ThemedText>
             )}
-          </TouchableOpacity>
-        </View>
+
+            {/* Subject Selection (if STUDENT is selected) */}
+            {targetRoles.includes('STUDENT') && allSubjects.length > 0 && (
+              <View style={styles.filterSection}>
+                <ThemedText style={styles.filterLabel}>Select Subjects</ThemedText>
+                <View style={styles.chipContainer}>
+                  {allSubjects.map((subj) => (
+                    <TouchableOpacity
+                      key={subj._id}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: selectedSubjects.includes(subj._id)
+                            ? tintColor
+                            : tintColor + '22',
+                          borderColor: tintColor,
+                        },
+                      ]}
+                      onPress={() => handleToggleSubject(subj._id)}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.chipText,
+                          {
+                            color: selectedSubjects.includes(subj._id)
+                              ? '#fff'
+                              : textColor,
+                          },
+                        ]}
+                      >
+                        {subj.name}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Send Button */}
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: tintColor }]}
+              onPress={handleSendNotification}
+              disabled={sending}
+            >
+              {sending ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <ThemedText style={styles.buttonText}>Send Notification</ThemedText>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {/* Sent Notifications List */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Sent Notifications ({sentNotifications.length})
+            {mode === 'manage'
+              ? `Manage Alerts (${sentNotifications.length})`
+              : `Sent Notifications (${sentNotifications.length})`}
           </ThemedText>
 
           {sentNotifications.length === 0 ? (

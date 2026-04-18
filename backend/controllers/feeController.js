@@ -34,6 +34,15 @@ const serializeFee = (fee) => ({
   updatedAt: fee.updatedAt,
 });
 
+const applySlipSubmission = async ({ fee, amount, slipDate, fileName }) => {
+  fee.submittedAmount = amount;
+  fee.submittedDate = new Date(toDateOnlyString(slipDate));
+  fee.paymentSlipPath = fileName;
+  fee.status = 'PAID_PENDING';
+  fee.paymentDate = new Date();
+  await fee.save();
+};
+
 const listFees = async (req, res) => {
   try {
     if (req.user.role === 'STUDENT') {
@@ -186,6 +195,31 @@ const verifyFee = async (req, res) => {
   }
 };
 
+const getMyFees = async (req, res) => {
+  try {
+    const fees = await hydrateFees(
+      Fee.find({ student: req.user.id }).sort({ dueDate: 1 })
+    );
+
+    const outstandingStatuses = new Set(['PENDING', 'OVERDUE']);
+    const outstandingFees = fees.filter((fee) => outstandingStatuses.has(fee.status));
+    const historyFees = fees.filter((fee) => !outstandingStatuses.has(fee.status));
+
+    const totalOutstanding = outstandingFees.reduce((sum, fee) => {
+      const amount = Number(fee.amount);
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
+
+    res.json({
+      outstandingFees: outstandingFees.map(serializeFee),
+      historyFees: historyFees.map(serializeFee),
+      totalOutstanding,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const searchFees = async (req, res) => {
   try {
     const studentId = req.query.studentId;
@@ -218,21 +252,11 @@ const searchFees = async (req, res) => {
 
 const studentPay = async (req, res) => {
   try {
+    const feeId = req.body.feeId ? String(req.body.feeId) : null;
     const studentId = req.body.studentId;
     const subjectId = req.body.subjectId;
     const amount = req.body.amount !== undefined ? Number(req.body.amount) : null;
     const slipDate = req.body.slipDate ? parseIsoDate(req.body.slipDate) : null;
-
-    const student = await User.findById(studentId);
-    const subject = await Subject.findById(subjectId);
-
-    if (!student || !subject) {
-      return res.status(404).json({ message: 'Student or subject not found' });
-    }
-
-    if (String(student._id) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You can only pay your own fees' });
-    }
 
     if (amount === null || Number.isNaN(amount) || amount <= 0) {
       return res.status(400).json({ message: 'Payment amount is required and must be greater than 0.' });
@@ -251,10 +275,55 @@ const studentPay = async (req, res) => {
       return res.status(400).json({ message: 'Slip date is required.' });
     }
 
+    if (feeId) {
+      const fee = await Fee.findById(feeId);
+      if (!fee) {
+        return res.status(404).json({ message: 'Fee not found.' });
+      }
+
+      if (String(fee.student) !== String(req.user.id)) {
+        return res.status(403).json({ message: 'You can only pay your own fees' });
+      }
+
+      if (!['PENDING', 'OVERDUE'].includes(fee.status)) {
+        return res.status(400).json({ message: 'Only pending or overdue fees can be submitted.' });
+      }
+
+      if (Math.abs(Number(fee.amount) - amount) > 0.009) {
+        return res.status(400).json({
+          message: `Entered amount does not match the required fee ($${fee.amount}).`,
+        });
+      }
+
+      await applySlipSubmission({
+        fee,
+        amount,
+        slipDate,
+        fileName: req.file.filename,
+      });
+
+      const hydrated = await hydrateFees(Fee.findById(fee._id));
+      return res.json({
+        message: 'Payment submitted for verification.',
+        fee: serializeFee(hydrated),
+      });
+    }
+
+    const student = await User.findById(studentId);
+    const subject = await Subject.findById(subjectId);
+
+    if (!student || !subject) {
+      return res.status(404).json({ message: 'Student or subject not found' });
+    }
+
+    if (String(student._id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only pay your own fees' });
+    }
+
     const pendingFee = await Fee.findOne({
       student: student._id,
       subject: subject._id,
-      status: 'PENDING',
+      status: { $in: ['PENDING', 'OVERDUE'] },
     }).sort({ dueDate: 1 });
 
     if (!pendingFee) {
@@ -267,12 +336,12 @@ const studentPay = async (req, res) => {
       });
     }
 
-    pendingFee.submittedAmount = amount;
-    pendingFee.submittedDate = new Date(toDateOnlyString(slipDate));
-    pendingFee.paymentSlipPath = req.file.filename;
-    pendingFee.status = 'PAID_PENDING';
-    pendingFee.paymentDate = new Date();
-    await pendingFee.save();
+    await applySlipSubmission({
+      fee: pendingFee,
+      amount,
+      slipDate,
+      fileName: req.file.filename,
+    });
 
     const hydrated = await hydrateFees(Fee.findById(pendingFee._id));
     res.json({
@@ -331,6 +400,7 @@ module.exports = {
   updateFee,
   deleteFee,
   verifyFee,
+  getMyFees,
   searchFees,
   studentPay,
   createSubjectFee,

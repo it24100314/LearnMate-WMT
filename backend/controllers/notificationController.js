@@ -15,7 +15,19 @@ const toRoleArray = (value) => {
 
 const toIdArray = (value) => {
   if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean).map((item) => String(item));
+  if (Array.isArray(value)) {
+    return value
+      .filter(Boolean)
+      .map((item) => {
+        if (typeof item === 'object' && item !== null) {
+          return String(item._id || item.id || item);
+        }
+        return String(item);
+      });
+  }
+  if (typeof value === 'object' && value !== null) {
+    return [String(value._id || value.id || value)];
+  }
   return [String(value)];
 };
 
@@ -70,13 +82,23 @@ const getNotificationOptions = async (req, res) => {
     const prefillRoles = VALID_ROLES.filter((role) => role !== 'ADMIN');
 
     let teacherSubjects = [];
+    let schoolClasses = [];
+
     if (req.currentUser.role === 'TEACHER') {
-      teacherSubjects = await Subject.find({ _id: { $in: req.currentUser.subjects || [] } }).select('_id name').sort({ name: 1 });
+      const teacherSubjectIds = toIdArray(req.currentUser.subjects);
+      const teacherClassIds = toIdArray(req.currentUser.assignedClasses);
+
+      if (teacherSubjectIds.length > 0) {
+        teacherSubjects = await Subject.find({ _id: { $in: teacherSubjectIds } }).select('_id name').sort({ name: 1 });
+      }
+
+      if (teacherClassIds.length > 0) {
+        schoolClasses = await SchoolClass.find({ _id: { $in: teacherClassIds } }).select('_id name').sort({ name: 1 });
+      }
     } else if (req.currentUser.role === 'ADMIN') {
       teacherSubjects = await Subject.find().select('_id name').sort({ name: 1 });
+      schoolClasses = await SchoolClass.find().select('_id name').sort({ name: 1 });
     }
-
-    const schoolClasses = await SchoolClass.find().select('_id name').sort({ name: 1 });
 
     res.json({
       roles: VALID_ROLES,
@@ -96,6 +118,30 @@ const createNotification = async (req, res) => {
     const targetRoles = toRoleArray(req.body.targetRoles);
     const selectedClasses = toIdArray(req.body.selectedClasses);
     const selectedSubjects = toIdArray(req.body.selectedSubjects);
+
+    const invalidRoles = targetRoles.filter((role) => !VALID_ROLES.includes(role));
+    if (invalidRoles.length > 0) {
+      return res.status(400).json({ message: `Invalid roles selected: ${invalidRoles.join(', ')}` });
+    }
+
+    if (req.currentUser.role === 'TEACHER') {
+      if (targetRoles.includes('ADMIN')) {
+        return res.status(403).json({ message: 'Teachers cannot send notifications to admins.' });
+      }
+
+      const allowedClassIds = new Set(toIdArray(req.currentUser.assignedClasses));
+      const allowedSubjectIds = new Set(toIdArray(req.currentUser.subjects));
+
+      const hasUnassignedClass = selectedClasses.some((classId) => !allowedClassIds.has(classId));
+      if (hasUnassignedClass) {
+        return res.status(403).json({ message: 'You can only target classes assigned to you.' });
+      }
+
+      const hasUnassignedSubject = selectedSubjects.some((subjectId) => !allowedSubjectIds.has(subjectId));
+      if (hasUnassignedSubject) {
+        return res.status(403).json({ message: 'You can only target subjects assigned to you.' });
+      }
+    }
 
     if (!title || !message || targetRoles.length === 0) {
       let error = '';
@@ -250,11 +296,8 @@ const deleteNotification = async (req, res) => {
 };
 
 /**
- * Get notifications visible to current user based on role and memberships
- * Filters by:
- * - ADMIN: All system notifications
- * - TEACHER: Notifications sent to TEACHER role
- * - STUDENT: Notifications sent to their class + STUDENT role + individual
+ * Get notifications visible to current user.
+ * Visibility is recipient-scoped (targetUser === current user) for all roles.
  */
 const getVisibleNotifications = async (req, res) => {
   try {

@@ -14,6 +14,7 @@ export default function StudentDashboard() {
     examsCount: 0,
     marksCount: 0,
     notificationsCount: 0,
+    totalOutstanding: 0,
   });
 
   useEffect(() => {
@@ -23,16 +24,18 @@ export default function StudentDashboard() {
   const fetchData = async () => {
     try {
       setError(null);
-      const [examsRes, marksRes, notificationsRes] = await Promise.all([
+      const [examsRes, marksRes, notificationsRes, feesRes] = await Promise.all([
         api.get('/exams/list'),
         api.get('/marks'),
-        api.get('/notifications/list'),
+        api.get('/notifications/visible'),
+        api.get('/fees/my-fees'),
       ]);
 
       setStats({
         examsCount: examsRes.data?.exams?.length ?? 0,
         marksCount: marksRes.data?.marks?.length ?? 0,
-        notificationsCount: notificationsRes.data?.unreadNotificationCount ?? 0,
+        notificationsCount: notificationsRes.data?.unreadCount ?? 0,
+        totalOutstanding: Number(feesRes.data?.totalOutstanding ?? 0),
       });
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
@@ -125,6 +128,22 @@ export default function StudentDashboard() {
           <Text style={styles.tileTitle}>My Results</Text>
           <Text style={styles.tileDesc}>Published marks and remarks.</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/fees' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="wallet-outline" size={28} color="#3f51b5" />
+          </View>
+          <Text style={styles.tileTitle}>My Fees</Text>
+          <Text style={styles.tileDesc}>Check outstanding balance and upload slips.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tileCard} onPress={() => router.push('/notifications' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="notifications-outline" size={28} color="#3f51b5" />
+          </View>
+          <Text style={styles.tileTitle}>Notifications</Text>
+          <Text style={styles.tileDesc}>Read announcements from teachers and admin.</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.surfaceCard}>
@@ -140,6 +159,10 @@ export default function StudentDashboard() {
         <View style={styles.statRow}>
           <Text style={styles.statLabel}>Unread Notifications</Text>
           <Text style={styles.statValue}>{stats.notificationsCount}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>Outstanding Fees</Text>
+          <Text style={styles.statValue}>${stats.totalOutstanding.toFixed(2)}</Text>
         </View>
       </View>
       <View style={{ height: 30 }} />

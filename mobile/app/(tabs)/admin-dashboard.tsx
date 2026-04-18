@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.heroCard}>
         <Text style={styles.title}>Admin Dashboard</Text>
-        <Text style={styles.subtitle}>Control exams, fees, and communication across your institute.</Text>
+        <Text style={styles.subtitle}>Control exams, fees, and institute-wide communications.</Text>
       </View>
 
       <View style={styles.grid}>
@@ -76,12 +76,20 @@ export default function AdminDashboard() {
           <Text style={styles.cardText}>Manage records and payment slips.</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => router.push('/notifications')}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-notifications?mode=compose' as any)}>
           <View style={styles.iconWrap}>
-            <Ionicons name="notifications-outline" size={30} color="#3f51b5" />
+            <Ionicons name="megaphone-outline" size={30} color="#3f51b5" />
           </View>
-          <Text style={styles.cardTitle}>Notifications</Text>
-          <Text style={styles.cardText}>Broadcast institute-wide updates.</Text>
+          <Text style={styles.cardTitle}>Send Global Alert</Text>
+          <Text style={styles.cardText}>Create and send new announcements quickly.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-notifications?mode=manage' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="list-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Manage Alerts</Text>
+          <Text style={styles.cardText}>Edit or delete previously sent announcements.</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
