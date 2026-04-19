@@ -177,7 +177,8 @@ const register = async (req, res) => {
       password,
       name,
       role,
-      active: true
+      // New self-registrations must be approved by admin before login.
+      active: false
     };
 
     if (role === 'STUDENT' && schoolClassId) {
@@ -212,7 +213,7 @@ const register = async (req, res) => {
 
     if (user) {
       res.status(201).json({
-        message: 'Registration successful! Please log in.',
+        message: 'Registration request sent successfully. Please wait for admin approval.',
         _id: user._id,
         username: user.username,
         email: user.email,
@@ -274,4 +275,36 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { getRegisterOptions, register, login };
+const forgotPassword = async (req, res) => {
+  try {
+    const { username, email, newPassword } = req.body;
+
+    if ((!username || username.trim() === '') && (!email || email.trim() === '')) {
+      return res.status(400).json({ message: 'Username or email is required.' });
+    }
+
+    try {
+      validatePasswordStrength(newPassword);
+    } catch (validationError) {
+      return res.status(400).json({ message: validationError.message });
+    }
+
+    const query = username && username.trim() !== ''
+      ? { username: username.trim() }
+      : { email: email.trim().toLowerCase() };
+
+    const user = await User.findOne(query);
+    if (!user) {
+      return res.status(404).json({ message: 'No user found with the provided details.' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password reset successful. Please log in with your new password.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Password reset failed.' });
+  }
+};
+
+module.exports = { getRegisterOptions, register, login, forgotPassword };

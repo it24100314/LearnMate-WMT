@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import { useRouter } from 'expo-router';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
@@ -42,7 +42,7 @@ export default function ExamsScreen() {
 
   const loadExams = async () => {
     try {
-      const savedRole = await SecureStore.getItemAsync('userRole');
+      const savedRole = await Storage.getItemAsync('userRole');
       setRole(savedRole || '');
 
       const response = await api.get('/exams/list');
@@ -278,10 +278,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#2563eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   title: {
     fontSize: 16,
@@ -308,7 +304,7 @@ const styles = StyleSheet.create({
   submissionStatus: {
     marginTop: 10,
     backgroundColor: '#ECFDF5',
-    borderLeft: 3,
+    borderLeftWidth: 3,
     borderLeftColor: '#10B981',
     padding: 10,
     borderRadius: 6,
@@ -384,3 +380,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+

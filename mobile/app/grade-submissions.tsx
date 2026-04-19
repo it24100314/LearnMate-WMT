@@ -59,53 +59,53 @@ export default function GradeSubmissionsScreen() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (examId) {
-      loadExamAndSubmissions();
-    }
+    if (!examId) return;
+
+    const loadExamAndSubmissions = async () => {
+      try {
+        // Get exam details and submissions
+        const examRes = await api.get(`/exams/${examId}`);
+        const exam = examRes.data?.exam;
+        setExam(exam);
+
+        // Get all info (students, submissions) from review endpoint
+        const reviewRes = await api.get(`/exams/review/${examId}`);
+        const { students, answerSheets, existingMarks } = reviewRes.data;
+
+        setStudents(students || []);
+
+        // Build submissions map and initialize grading data
+        const submissionsMap: Record<string, AnswerSheet> = {};
+        const gradingMap: GradingData = {};
+
+        answerSheets?.forEach((sheet: AnswerSheet) => {
+          if (sheet.student?._id) {
+            submissionsMap[sheet.student._id] = sheet;
+          }
+        });
+
+        setSubmissions(submissionsMap);
+
+        // Populate grading data with existing marks if any
+        students?.forEach((student: Student) => {
+          const existingMark = existingMarks?.find((m: any) => m.student?._id === student._id);
+          gradingMap[student._id] = {
+            marks: existingMark?.score?.toString() || '',
+            comments: existingMark?.comments || '',
+          };
+        });
+
+        setGradingData(gradingMap);
+      } catch (error: any) {
+        console.error('Error loading exam:', error);
+        Alert.alert('Error', 'Failed to load exam details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExamAndSubmissions();
   }, [examId]);
-
-  const loadExamAndSubmissions = async () => {
-    try {
-      // Get exam details and submissions
-      const examRes = await api.get(`/exams/${examId}`);
-      const exam = examRes.data?.exam;
-      setExam(exam);
-
-      // Get all info (students, submissions) from review endpoint
-      const reviewRes = await api.get(`/exams/review/${examId}`);
-      const { students, answerSheets, existingMarks } = reviewRes.data;
-
-      setStudents(students || []);
-
-      // Build submissions map and initialize grading data
-      const submissionsMap: Record<string, AnswerSheet> = {};
-      const gradingMap: GradingData = {};
-
-      answerSheets?.forEach((sheet: AnswerSheet) => {
-        if (sheet.student?._id) {
-          submissionsMap[sheet.student._id] = sheet;
-        }
-      });
-
-      setSubmissions(submissionsMap);
-
-      // Populate grading data with existing marks if any
-      students?.forEach((student: Student) => {
-        const existingMark = existingMarks?.find((m: any) => m.student?._id === student._id);
-        gradingMap[student._id] = {
-          marks: existingMark?.score?.toString() || '',
-          comments: existingMark?.comments || '',
-        };
-      });
-
-      setGradingData(gradingMap);
-    } catch (error: any) {
-      console.error('Error loading exam:', error);
-      Alert.alert('Error', 'Failed to load exam details');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const downloadSubmission = async (student: Student, answerSheet: AnswerSheet) => {
     try {
@@ -217,7 +217,7 @@ export default function GradeSubmissionsScreen() {
       <View style={styles.instructionsBox}>
         <Text style={styles.instructionsTitle}>📋 Grading Instructions</Text>
         <Text style={styles.instructionsText}>
-          Review each student's submission. Enter marks (0-{exam.maxMarks}) and optional comments. Click "Submit Grades"
+          Review each student submission. Enter marks (0-{exam.maxMarks}) and optional comments. Click Submit Grades
           when complete.
         </Text>
       </View>
@@ -381,10 +381,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#3B82F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
   },
   studentInfo: {
     marginBottom: 8,

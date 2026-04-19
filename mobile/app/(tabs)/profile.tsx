@@ -9,8 +9,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import api from '../../utils/api';
+import * as Storage from '../../utils/storage';
 
 type UserProfile = {
   _id: string;
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   const loadProfile = async () => {
     try {
       setError('');
-      const userId = await SecureStore.getItemAsync('userId');
+      const userId = await Storage.getItemAsync('userId');
       if (!userId) {
         throw new Error('User not found in store');
       }
@@ -52,25 +52,17 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        onPress: async () => {
-          try {
-            await SecureStore.deleteItemAsync('authToken');
-            await SecureStore.deleteItemAsync('userRole');
-            await SecureStore.deleteItemAsync('userId');
+  const performLogout = async () => {
+    try {
+      await Storage.clearSessionAsync();
+      router.replace('/');
+    } catch {
+      Alert.alert('Error', 'Something went wrong during logout.');
+    }
+  };
 
-            router.replace('/');
-          } catch {
-            Alert.alert('Error', 'Something went wrong during logout.');
-          }
-        },
-        style: 'destructive',
-      },
-    ]);
+  const handleLogout = async () => {
+    void performLogout();
   };
 
   if (loading) {

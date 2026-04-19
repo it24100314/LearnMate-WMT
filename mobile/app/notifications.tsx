@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import { useRouter } from 'expo-router';
 import api from '../utils/api';
 import { downloadAndShareApiFile } from '../utils/download';
@@ -72,7 +72,7 @@ export default function NotificationsScreen() {
 
   const loadData = async () => {
     try {
-      const savedRole = await SecureStore.getItemAsync('userRole');
+      const savedRole = await Storage.getItemAsync('userRole');
       const userRole = savedRole || '';
       setRole(userRole);
 
@@ -468,3 +468,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import api from '../utils/api';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 
 type NamedItem = { _id: string; name: string };
 type Student = { _id: string; name: string; username: string };
@@ -16,6 +16,7 @@ export default function EnterMarksScreen() {
   
   const [selectedClassId, setSelectedClassId] = useState(params.classId ? String(params.classId) : '');
   const [selectedExamId, setSelectedExamId] = useState('');
+  const initialClassIdRef = useRef(params.classId ? String(params.classId) : '');
   
   const [marksData, setMarksData] = useState<Record<string, { score: string, comments: string }>>({});
   
@@ -24,25 +25,25 @@ export default function EnterMarksScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const userId = await Storage.getItemAsync('userId');
+        const classesRes = await api.get(`/classes/teacher/${userId}`);
+        setClasses(classesRes.data || []);
+
+        if (initialClassIdRef.current) {
+          await fetchExamsAndStudents(initialClassIdRef.current);
+        }
+      } catch (err: any) {
+        console.error(err);
+        Alert.alert('Error', 'Failed to load options.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadInitialData();
   }, []);
-
-  const loadInitialData = async () => {
-    try {
-      const userId = await SecureStore.getItemAsync('userId');
-      const classesRes = await api.get(`/classes/teacher/${userId}`);
-      setClasses(classesRes.data || []);
-      
-      if (selectedClassId) {
-        await fetchExamsAndStudents(selectedClassId);
-      }
-    } catch (err: any) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to load options.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchExamsAndStudents = async (classId: string) => {
     try {
@@ -55,7 +56,7 @@ export default function EnterMarksScreen() {
       setExams(examsRes.data?.exams || []);
       setSelectedExamId('');
       setMarksData({});
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Failed to load roster or exams for class.');
     } finally {
       setFetchingRoster(false);
@@ -91,7 +92,7 @@ export default function EnterMarksScreen() {
     if (!exam) return;
 
     // Validation
-    for (const [studentId, data] of Object.entries(marksData)) {
+    for (const data of Object.values(marksData)) {
       if (data.score) {
         const num = Number(data.score);
         if (isNaN(num)) {

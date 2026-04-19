@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, Alert } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import { useRouter } from 'expo-router';
 import api from '../utils/api';
 
@@ -13,7 +13,7 @@ export default function ClassesScreen() {
 
   const loadClasses = async () => {
     try {
-      const userId = await SecureStore.getItemAsync('userId');
+      const userId = await Storage.getItemAsync('userId');
       if (!userId) throw new Error('User not found');
       
       const response = await api.get(`/classes/teacher/${userId}`);
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { fontSize: 20, fontWeight: 'bold', marginHorizontal: 20, marginTop: 30, marginBottom: 15, color: '#1f2937' },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   title: { fontSize: 18, fontWeight: '700', color: '#111827', flex: 1 },
   descText: { fontSize: 14, color: '#4b5563', marginBottom: 15 },
@@ -92,3 +92,4 @@ const styles = StyleSheet.create({
   btnText: { color: '#1D4ED8', fontWeight: 'bold', fontSize: 14 },
   btnTextAlt: { color: '#374151', fontWeight: 'bold', fontSize: 14 }
 });
+

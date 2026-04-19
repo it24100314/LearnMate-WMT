@@ -87,7 +87,7 @@ export default function CreateExamScreen() {
           uri: asset.uri,
         });
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to pick file');
     }
   };

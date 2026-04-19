@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import api from '../utils/api';
 
 type Subject = { _id: string; name: string };
@@ -43,7 +43,7 @@ export default function FeesScreen() {
 
   const loadFees = async () => {
     try {
-      const savedRole = await SecureStore.getItemAsync('userRole');
+      const savedRole = await Storage.getItemAsync('userRole');
       setRole(savedRole || '');
 
       const response = await api.get('/fees/list');
@@ -270,3 +270,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+

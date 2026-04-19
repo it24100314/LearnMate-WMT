@@ -6,7 +6,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.use(protect);
 
 router.route('/')
-  .get(authorize('ADMIN', 'TEACHER'), getUsers);
+  .get(authorize('ADMIN'), getUsers);
 
 router.route('/me/assignments')
   .get(authorize('TEACHER'), getTeacherAssignments);

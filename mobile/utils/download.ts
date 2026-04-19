@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from './storage';
 import * as Sharing from 'expo-sharing';
 
 import { API_URL } from './api';
@@ -26,7 +26,7 @@ const toAbsoluteApiUrl = (endpoint: string) => {
 };
 
 export const downloadAndShareApiFile = async ({ endpoint, fileName, dialogTitle }: DownloadAndShareOptions) => {
-  const token = await SecureStore.getItemAsync('userToken');
+  const token = await Storage.getItemAsync('userToken');
   if (!token) {
     throw new Error('Not authorized, no token');
   }
@@ -63,3 +63,4 @@ export const downloadAndShareApiFile = async ({ endpoint, fileName, dialogTitle 
     shared: canShare,
   };
 };
+

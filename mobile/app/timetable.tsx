@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import api from '../utils/api';
 
 interface TimetableEntry {
@@ -25,11 +25,11 @@ export default function TimetableScreen() {
   const fetchTimetable = async () => {
     try {
       setLoading(true);
-      const userId = await SecureStore.getItemAsync('userId');
+      const userId = await Storage.getItemAsync('userId');
       if (!userId) throw new Error('User not found.');
 
       // Check current user role to hit correct endpoint
-      const role = await SecureStore.getItemAsync('userRole');
+      const role = await Storage.getItemAsync('userRole');
 
       let response;
       if (role === 'STUDENT') {
@@ -125,10 +125,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 15,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
     elevation: 2,
   },
   dayBadge: {
@@ -167,3 +163,4 @@ const styles = StyleSheet.create({
     color: '#888',
   },
 });
+

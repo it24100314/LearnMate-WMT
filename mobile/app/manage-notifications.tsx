@@ -15,7 +15,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import api from '@/utils/api';
 
 interface SchoolClass {
@@ -56,7 +56,6 @@ const ManageNotificationsScreen = () => {
   const [allClasses, setAllClasses] = useState<SchoolClass[]>([]);
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [sentNotifications, setSentNotifications] = useState<Notification[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -70,9 +69,7 @@ const ManageNotificationsScreen = () => {
   // Check if teacher/admin
   useEffect(() => {
     const checkRole = async () => {
-      const role = await SecureStore.getItemAsync('userRole');
-      const id = await SecureStore.getItemAsync('userId');
-      setCurrentUser({ role, id });
+      const role = await Storage.getItemAsync('userRole');
 
       if (role !== 'TEACHER' && role !== 'ADMIN') {
         Alert.alert('Access Denied', 'Only teachers and admins can manage notifications');
@@ -88,7 +85,6 @@ const ManageNotificationsScreen = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = await SecureStore.getItemAsync('userToken');
 
       // Get options (classes and subjects)
       const optionsResponse = await api.get('/notifications/options');
@@ -716,3 +712,4 @@ const styles = StyleSheet.create({
 });
 
 export default ManageNotificationsScreen;
+

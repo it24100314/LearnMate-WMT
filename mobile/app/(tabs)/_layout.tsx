@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../../utils/storage';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -13,7 +13,7 @@ export default function TabLayout() {
 
   useEffect(() => {
     const loadRole = async () => {
-      const savedRole = await SecureStore.getItemAsync('userRole');
+      const savedRole = await Storage.getItemAsync('userRole');
       setRole(savedRole || '');
     };
     loadRole();

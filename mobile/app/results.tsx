@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 import api from '../utils/api';
 
 type Subject = { _id: string; name: string };
@@ -18,9 +17,6 @@ export default function MarksScreen() {
   const loadMarks = async () => {
     try {
       setError('');
-      const userId = await SecureStore.getItemAsync('userId');
-      const role = await SecureStore.getItemAsync('userRole');
-      
       const response = await api.get('/marks');
       
       setMarks(response.data?.marks ?? []);
@@ -91,7 +87,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { fontSize: 20, fontWeight: 'bold', marginHorizontal: 20, marginTop: 30, marginBottom: 15, color: '#1f2937' },
   list: { paddingHorizontal: 20, paddingBottom: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 15, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#007AFF' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '700', color: '#111827' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 'bold', overflow: 'hidden' },
@@ -105,3 +101,4 @@ const styles = StyleSheet.create({
   errorText: { color: '#ef4444', fontSize: 16, textAlign: 'center' },
   empty: { color: '#6b7280', fontSize: 15, textAlign: 'center' },
 });
+

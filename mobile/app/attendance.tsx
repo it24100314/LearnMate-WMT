@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import * as Storage from '../utils/storage';
 import api from '../utils/api';
 
 interface AttendanceRecord {
@@ -32,10 +32,10 @@ export default function StudentAttendanceScreen() {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      const userId = await SecureStore.getItemAsync('userId');
+      const userId = await Storage.getItemAsync('userId');
       if (!userId) throw new Error('User not found.');
 
-      const role = await SecureStore.getItemAsync('userRole');
+      const role = await Storage.getItemAsync('userRole');
       
       let response;
       if (role === 'STUDENT') {
@@ -169,10 +169,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
     elevation: 2,
   },
   statBox: {
@@ -197,10 +193,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
     elevation: 2,
   },
   cardHeader: {
@@ -246,3 +238,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+

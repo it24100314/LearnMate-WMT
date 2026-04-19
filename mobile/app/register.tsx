@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import type { AxiosError } from 'axios';
 import api from '../utils/api';
 
@@ -35,6 +36,7 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<Role | ''>('');
 
   const [schoolClassId, setSchoolClassId] = useState('');
@@ -99,6 +101,38 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    const trimmedUsername = username.trim();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      Alert.alert('Validation Error', 'Name is required');
+      return;
+    }
+    if (!trimmedUsername) {
+      Alert.alert('Validation Error', 'Username is required');
+      return;
+    }
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+      Alert.alert('Validation Error', 'Username must be between 3 and 50 characters');
+      return;
+    }
+    if (!trimmedEmail) {
+      Alert.alert('Validation Error', 'Email is required');
+      return;
+    }
+    if (!/.+\@.+\..+/.test(trimmedEmail)) {
+      Alert.alert('Validation Error', 'Email should be valid');
+      return;
+    }
+    if (!password || !/^(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(password)) {
+      Alert.alert(
+        'Validation Error',
+        'Password must be at least 8 characters long and include uppercase and lowercase letters.'
+      );
+      return;
+    }
+
     if (!role) {
       Alert.alert('Validation Error', 'Role is required');
       return;
@@ -128,9 +162,9 @@ export default function RegisterScreen() {
 
     try {
       const payload = {
-        username,
-        name,
-        email,
+        username: trimmedUsername,
+        name: trimmedName,
+        email: trimmedEmail,
         password,
         role,
         ...(currentRole === 'STUDENT' && {
@@ -148,7 +182,7 @@ export default function RegisterScreen() {
 
       const response = await api.post('/auth/register', payload);
       
-      Alert.alert('Success', response.data?.message ?? 'Registration successful! Please log in.', [
+      Alert.alert('Success', response.data?.message ?? 'Registration request sent to admin for approval.', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error: unknown) {
@@ -173,34 +207,43 @@ export default function RegisterScreen() {
 
       <TextInput
         style={styles.input}
+        placeholder="Full name"
+        placeholderTextColor="#94a3b8"
+        value={name}
+        onChangeText={setName}
+      />
+
+      <TextInput
+        style={styles.input}
         placeholder="Username"
+        placeholderTextColor="#94a3b8"
         value={username}
         onChangeText={setUsername}
         autoCapitalize="none"
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          placeholderTextColor="#94a3b8"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)} style={styles.eyeButton}>
+          <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Email address"
+        placeholderTextColor="#94a3b8"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Full name"
-        value={name}
-        onChangeText={setName}
       />
 
       <Text style={styles.label}>Select Role:</Text>
@@ -303,7 +346,7 @@ export default function RegisterScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={submitting}>
+      <TouchableOpacity style={[styles.button, submitting && styles.buttonDisabled]} onPress={handleRegister} disabled={submitting}>
         <Text style={styles.buttonText}>{submitting ? 'Creating account...' : 'Create account'}</Text>
       </TouchableOpacity>
 
@@ -356,6 +399,25 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     backgroundColor: '#fff'
+  },
+  passwordContainer: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  eyeButton: {
+    paddingLeft: 10,
+    paddingVertical: 6,
   },
   label: {
     fontSize: 16,
@@ -424,6 +486,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   link: {
     marginTop: 20,
