@@ -6,7 +6,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.use(protect);
 
 router.route('/')
-  .get(authorize('ADMIN', 'TEACHER'), getUsers);
+  .get(authorize('ADMIN'), getUsers);
 
 // Get current authenticated user
 router.route('/me')
