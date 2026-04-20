@@ -6,6 +6,7 @@ const {
   updateMark,
   deleteMark,
   getStudentMarks,
+  getMarksByExam,
   searchMarks,
   searchMarksBySubject,
   processBulkMarks,
@@ -26,6 +27,7 @@ router.delete('/delete/:id', authorize('TEACHER', 'ADMIN'), deleteMark);
 router.get('/search', searchMarks);
 
 router.get('/search-by-subject', authorize('STUDENT'), searchMarksBySubject);
+router.get('/exam/:examId', authorize('ADMIN', 'TEACHER'), getMarksByExam);
 
 router.route('/student/:studentId')
   .get(getStudentMarks);

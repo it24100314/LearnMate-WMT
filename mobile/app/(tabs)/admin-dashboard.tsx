@@ -60,7 +60,7 @@ export default function AdminDashboard() {
       </View>
 
       <View style={styles.grid}>
-        <TouchableOpacity style={styles.card} onPress={() => router.push('/exams')}>
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/admin-exams' as any)}>
           <View style={styles.iconWrap}>
             <Ionicons name="document-text-outline" size={30} color="#3f51b5" />
           </View>

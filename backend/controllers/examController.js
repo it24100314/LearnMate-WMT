@@ -322,6 +322,24 @@ const deleteExam = async (req, res) => {
 };
 
 const searchExams = async (req, res) => {
+  // Add new getAllExams method above it
+};
+
+const getAllExams = async (req, res) => {
+  try {
+    const exams = await Exam.find()
+      .populate('subject', 'name')
+      .populate('schoolClass', 'name')
+      .populate('teacher', 'name username email')
+      .sort({ createdAt: -1 });
+
+    res.json(exams);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const searchExams = async (req, res) => {
   try {
     let filter = {};
     if (req.query.subjectId) filter.subject = req.query.subjectId;
@@ -699,6 +717,7 @@ const deleteAnswerSheet = async (req, res) => {
 module.exports = {
   getExamOptions,
   listExams,
+  getAllExams,
   createExam,
   updateExam,
   deleteExam,

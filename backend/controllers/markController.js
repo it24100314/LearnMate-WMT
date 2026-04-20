@@ -225,6 +225,22 @@ const searchMarksBySubject = async (req, res) => {
 };
 
 const processBulkMarks = async (req, res) => {
+  // We'll keep processBulkMarks as is but insert getMarksByExam before it.
+};
+
+const getMarksByExam = async (req, res) => {
+  try {
+    const marks = await Mark.find({ exam: req.params.examId })
+      .populate('student', 'name username email')
+      .populate('exam', 'title maxMarks passMarks')
+      .sort({ createdAt: -1 });
+    res.json(marks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const processBulkMarks = async (req, res) => {
   try {
     const { examId, marksData } = req.body;
     // marksData should be an object representing studentId: { score: number, comments: string, published: boolean }
@@ -282,6 +298,7 @@ module.exports = {
   deleteMark,
   getStudentMarks,
   searchMarks,
+  getMarksByExam,
   searchMarksBySubject,
   processBulkMarks,
 };

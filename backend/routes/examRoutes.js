@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getExamOptions,
   listExams,
+  getAllExams,
   createExam,
   updateExam,
   deleteExam,
@@ -24,6 +25,7 @@ const answerUpload = buildUploader('answer-sheets').single('file');
 
 router.use(protect);
 
+router.get('/all', authorize('ADMIN'), getAllExams);
 router.get('/options', authorize('TEACHER', 'ADMIN'), getExamOptions);
 router.get('/list', listExams);
 router.get('/search', searchExams);
