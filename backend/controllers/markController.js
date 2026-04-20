@@ -224,10 +224,6 @@ const searchMarksBySubject = async (req, res) => {
   }
 };
 
-const processBulkMarks = async (req, res) => {
-  // We'll keep processBulkMarks as is but insert getMarksByExam before it.
-};
-
 const getMarksByExam = async (req, res) => {
   try {
     const marks = await Mark.find({ exam: req.params.examId })

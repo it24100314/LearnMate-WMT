@@ -321,10 +321,6 @@ const deleteExam = async (req, res) => {
   }
 };
 
-const searchExams = async (req, res) => {
-  // Add new getAllExams method above it
-};
-
 const getAllExams = async (req, res) => {
   try {
     const exams = await Exam.find()
