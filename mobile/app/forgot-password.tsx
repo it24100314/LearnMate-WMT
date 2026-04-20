@@ -1,46 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import type { AxiosError } from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import type { AxiosError } from 'axios';
 import api from '../utils/api';
 
 type ApiError = {
   message?: string;
 };
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!identifier || !password) {
-      Alert.alert('Validation Error', 'Please enter both username/email and password');
+  const handleResetPassword = async () => {
+    if (!identifier.trim() || !newPassword.trim()) {
+      Alert.alert('Validation Error', 'Please enter your username/email and the new password.');
       return;
     }
 
-    try {
-      const response = await api.post('/auth/login', { identifier, password });
-      
-      if (response.data.token) {
-        await SecureStore.setItemAsync('userToken', response.data.token);
-        await SecureStore.setItemAsync('userRole', response.data.role);
-        await SecureStore.setItemAsync('userId', response.data._id);
+    if (newPassword.length < 6) {
+      Alert.alert('Validation Error', 'Password must be at least 6 characters long.');
+      return;
+    }
 
-        if (response.data.role === 'STUDENT') {
-          router.replace('/(tabs)/student-dashboard');
-        } else if (response.data.role === 'TEACHER') {
-          router.replace('/(tabs)/teacher-dashboard');
-        } else if (response.data.role === 'ADMIN') {
-          router.replace('/(tabs)/admin-dashboard');
-        }
-      }
+    setLoading(true);
+    try {
+      // The backend accepts username and email. We send identifier to both to check whichever hits.
+      // Or we can just figure out if it's an email format.
+      const isEmail = identifier.includes('@');
+      const payload = isEmail 
+        ? { email: identifier, newPassword } 
+        : { username: identifier, newPassword };
+
+      const response = await api.post('/auth/forgot-password', payload);
+      
+      Alert.alert('Success', response.data.message || 'Password reset successful.', [
+        { text: 'Go to Login', onPress: () => router.replace('/') }
+      ]);
     } catch (error: unknown) {
       const axiosError = error as AxiosError<ApiError>;
-      const errorMessage = axiosError.response?.data?.message || 'Login failed. Please check your credentials and try again.';
-      Alert.alert('Login Failed', errorMessage);
+      const errorMessage = axiosError.response?.data?.message || 'Password reset failed. Please check your credentials.';
+      Alert.alert('Reset Failed', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,20 +55,25 @@ export default function LoginScreen() {
       <View style={styles.accentBottom} />
 
       <View style={styles.content}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#3f51b5" />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <View style={styles.logoBadge}>
-            <Ionicons name="school-outline" size={26} color="#3f51b5" />
+            <Ionicons name="key-outline" size={26} color="#3f51b5" />
           </View>
-          <Text style={styles.welcome}>Welcome Back</Text>
-          <Text style={styles.title}>LearnMate Academy</Text>
+          <Text style={styles.welcome}>Recovery</Text>
+          <Text style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>
-            Welcome to Learn Mate. Sign in to access your educational portal.
+            Enter your username or email and provide a new strong password to regain access.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sign In</Text>
-          <Text style={styles.cardSubtitle}>Use your account credentials to continue.</Text>
+          <Text style={styles.cardTitle}>Set New Password</Text>
+          <Text style={styles.cardSubtitle}>Provide your account details to reset.</Text>
 
           <View style={styles.inputContainer}>
             <Ionicons name="person-outline" size={20} color="#6b7280" style={styles.inputIcon} />
@@ -75,6 +85,7 @@ export default function LoginScreen() {
               onChangeText={setIdentifier}
               autoCapitalize="none"
               selectionColor="#3f51b5"
+              editable={!loading}
             />
           </View>
 
@@ -82,27 +93,30 @@ export default function LoginScreen() {
             <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="New Password"
               placeholderTextColor="#8a94a6"
-              value={password}
-              onChangeText={setPassword}
+              value={newPassword}
+              onChangeText={setNewPassword}
               secureTextEntry
               selectionColor="#3f51b5"
+              editable={!loading}
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPasswordContainer} onPress={() => router.push('/forgot-password')}>
-            <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.9}>
-            <Text style={styles.buttonText}>Login</Text>
-            <Ionicons name="arrow-forward" size={18} color="#ffffff" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.registerRow} onPress={() => router.push('/register')}>
-            <Text style={styles.registerHint}>Don&apos;t have an account?</Text>
-            <Text style={styles.link}>Register</Text>
+          <TouchableOpacity 
+            style={[styles.button, loading && styles.buttonDisabled]} 
+            onPress={handleResetPassword} 
+            activeOpacity={0.9}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Text style={styles.buttonText}>Reset Password</Text>
+                <Ionicons name="checkmark-circle-outline" size={18} color="#ffffff" />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -140,6 +154,17 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 440,
     alignSelf: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backText: {
+    color: '#3f51b5',
+    fontWeight: '600',
+    fontSize: 16,
+    marginLeft: 6,
   },
   header: {
     marginBottom: 20,
@@ -217,16 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f2937',
   },
-  forgotPasswordContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 10,
-    marginTop: -4,
-  },
-  forgotPasswordText: {
-    color: '#3f51b5',
-    fontWeight: '600',
-    fontSize: 14,
-  },
   button: {
     marginTop: 4,
     backgroundColor: '#3f51b5',
@@ -237,25 +252,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   buttonText: {
     color: '#ffffff',
     fontSize: 17,
-    fontWeight: '700',
-  },
-  registerRow: {
-    marginTop: 18,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-  },
-  registerHint: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  link: {
-    color: '#3f51b5',
-    fontSize: 14,
     fontWeight: '700',
   },
 });

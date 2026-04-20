@@ -91,6 +91,14 @@ export default function AdminDashboard() {
           <Text style={styles.cardTitle}>Manage Alerts</Text>
           <Text style={styles.cardText}>Edit or delete previously sent announcements.</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.card} onPress={() => router.push('/manage-users' as any)}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="people-outline" size={30} color="#3f51b5" />
+          </View>
+          <Text style={styles.cardTitle}>Manage Users</Text>
+          <Text style={styles.cardText}>Approve registrations, edit roles, or remove accounts.</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
