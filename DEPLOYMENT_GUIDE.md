@@ -1,4 +1,4 @@
-# WMT Project - Completeness Implementation Guide
+# WMT Project - Deployment & Setup Guide
 
 ## Overview
 All missing features from the original Spring Boot project have been implemented in the Node.js backend. This includes:
@@ -6,6 +6,21 @@ All missing features from the original Spring Boot project have been implemented
 - ✅ Director & Student Support Officer dashboards
 - ✅ Full analytics for all 6 user roles
 - ✅ 13 new API endpoints
+
+## Initial Setup & Seeding
+
+Before your first run, you should seed the database with subjects, classes, sample data, and core users.
+
+```bash
+cd backend
+npm install
+node seed.js
+```
+
+This will automatically create test users for you to log in with:
+- **Admin**: `admin@` / `Admin@123`
+- **Teacher**: `teacher@` / `Teacher@123`
+- **Student**: `student@` / `Student@123`
 
 ---
 
@@ -74,6 +89,12 @@ Or manually trigger deployment in Render Dashboard:
 ---
 
 ## API Endpoints (New)
+
+### Default Admin Credentials (for local testing/seeding)
+If you run `node backend/seed.js`, these users are created:
+- **Admin**: `admin@` / `Admin@123`
+- **Teacher**: `teacher@` / `Teacher@123`
+- **Student**: `student@` / `Student@123`
 
 ### Dashboard Endpoints
 All require JWT token in `Authorization: Bearer <token>` header
