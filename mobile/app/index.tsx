@@ -13,6 +13,7 @@ type ApiError = {
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -86,9 +87,12 @@ export default function LoginScreen() {
               placeholderTextColor="#8a94a6"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               selectionColor="#3f51b5"
             />
+            <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ paddingHorizontal: 8 }}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6b7280" />
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.forgotPasswordContainer} onPress={() => router.push('/forgot-password')}>

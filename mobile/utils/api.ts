@@ -1,6 +1,8 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
+// Prefer the environment-provided URL, but fall back to a sensible default
+// during development so the app doesn't immediately fail when env isn't loaded.
 export const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const api = axios.create({
