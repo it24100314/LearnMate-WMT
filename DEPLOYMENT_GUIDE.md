@@ -2,10 +2,9 @@
 
 ## Overview
 All missing features from the original Spring Boot project have been implemented in the Node.js backend. This includes:
-- ✅ FR8: Report Generation (PDF/CSV exports)
-- ✅ Director & Student Support Officer dashboards
-- ✅ Full analytics for all 6 user roles
-- ✅ 13 new API endpoints
+- ✅ Report Generation (PDF/CSV exports)
+- ✅ Dashboard analytics for Admin, Teacher, and Student roles
+- ✅ API endpoints
 
 ## Initial Setup & Seeding
 
@@ -60,13 +59,11 @@ This will install:
 ### 2. Push All Changes to Git
 ```bash
 git add backend/
-git commit -m "feat: Add FR8 Report Generation and Dashboard Analytics
+git commit -m "feat: Add Report Generation and Dashboard Analytics
 
-- Add DIRECTOR and STUDENT_SUPPORT_OFFICER roles
-- Implement DashboardService with 6 role-specific dashboards
+- Implement DashboardService with role-specific dashboards
 - Implement ReportService for PDF/CSV generation
-- Add DashboardController with 7 endpoints
-- Add ReportController with 6 endpoints
+- Add DashboardController and ReportController
 - Add dashboardRoutes.js and reportRoutes.js
 - Update server.js to mount new routes
 - Add pdfkit and csv-stringify dependencies"
@@ -123,18 +120,6 @@ GET /api/dashboard/student
 ```
 Returns: attendanceRate, upcomingExams, averageScore, feeStatus, unreadNotifications
 
-**Director Dashboard** ⭐ NEW
-```
-GET /api/dashboard/director
-```
-Returns: summary, attendance trends, finance metrics, performance, low attendance alerts
-
-**Support Officer Dashboard** ⭐ NEW
-```
-GET /api/dashboard/support-officer
-```
-Returns: lowAttendanceAlerts, decliningGradesAlerts, totalAlerts, actionRequired
-
 ---
 
 ### Report Endpoints
@@ -174,10 +159,6 @@ curl -H "Authorization: Bearer $TOKEN" \
 # Test Admin Dashboard
 curl -H "Authorization: Bearer $TOKEN" \
   https://learnmate-wmt-project.onrender.com/api/dashboard/admin
-
-# Test Director Dashboard
-curl -H "Authorization: Bearer $TOKEN" \
-  https://learnmate-wmt-project.onrender.com/api/dashboard/director
 ```
 
 ### 2. Test Report Generation
@@ -193,20 +174,17 @@ curl -H "Authorization: Bearer $TOKEN" \
   -o marks-report.csv
 ```
 
-### 3. Create Test Users for New Roles
+### 3. Create Additional Test Users
+If you want to manually create more admins via the Node REPL or MongoDB:
 ```javascript
-// To create DIRECTOR user (only via admin/backend)
-// Use MongoDB directly or admin screen:
 {
-  username: "director1",
-  email: "director@school.com",
-  name: "School Director",
+  username: "admin2",
+  email: "admin2@school.com",
+  name: "System Admin 2",
   password: "HashedPassword",  // Will be hashed by pre-save hook
-  role: "DIRECTOR",
+  role: "ADMIN",
   active: true
 }
-
-// Similar for STUDENT_SUPPORT_OFFICER role
 ```
 
 ---
