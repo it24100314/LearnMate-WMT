@@ -22,23 +22,11 @@ const hydrateAttendance = async (query) => {
 };
 
 const resolveClassesForTeacher = async (teacherId) => {
-  const timetables = await Timetable.find({ teacher: teacherId }).populate('schoolClass', 'name');
-  const seen = new Set();
-  const classes = [];
+  const teacher = await User.findById(teacherId).populate('assignedClasses', 'name');
+  if (!teacher) return [];
 
-  timetables.forEach((entry) => {
-    if (!entry.schoolClass?._id) return;
-    const key = String(entry.schoolClass._id);
-    if (!seen.has(key)) {
-      seen.add(key);
-      classes.push(entry.schoolClass);
-    }
-  });
-
-  if (classes.length === 0) {
-    return SchoolClass.find().sort({ name: 1 });
-  }
-
+  // Requirement #1: Use assignedClasses from user profile
+  const classes = teacher.assignedClasses || [];
   return classes.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
 };
 
@@ -137,6 +125,8 @@ const serializeAttendance = (attendance) => ({
   schoolClass: attendance.schoolClass || attendance.student?.schoolClass || null,
   date: attendance.date,
   present: attendance.present,
+  // Fix #1: include status field so frontend can use PRESENT/ABSENT/LATE
+  status: attendance.status || (attendance.present ? 'PRESENT' : 'ABSENT'),
   notes: attendance.notes,
   createdAt: attendance.createdAt,
   updatedAt: attendance.updatedAt,
@@ -286,15 +276,22 @@ const searchAttendancesByDate = async (req, res) => {
       return res.status(400).json({ message: 'Invalid date format. Please use YYYY-MM-DD.' });
     }
 
-    const baseAttendances = await loadAttendancesForUser(req.currentUser);
-    const targetDateOnly = toDateOnlyString(date);
+    const dateOnly = toDateOnlyString(date);
+    // Fix #4: filter in MongoDB, not in memory
+    const attendances = await hydrateAttendance(
+      Attendance.find({
+        date: {
+          $gte: new Date(dateOnly),
+          $lt: new Date(`${dateOnly}T23:59:59.999Z`),
+        },
+      }).sort({ date: -1, _id: -1 })
+    );
 
-    const filtered = baseAttendances.filter((attendance) => toDateOnlyString(attendance.date) === targetDateOnly);
-    if (filtered.length === 0) {
-      return res.json({ attendances: [], info: `No attendance records found for ${targetDateOnly}.` });
+    if (attendances.length === 0) {
+      return res.json({ attendances: [], info: `No attendance records found for ${dateOnly}.` });
     }
 
-    res.json({ attendances: filtered.map(serializeAttendance) });
+    res.json({ attendances: attendances.map(serializeAttendance) });
   } catch (error) {
     res.status(500).json({ message: `Error searching by date: ${error.message}` });
   }
@@ -303,7 +300,16 @@ const searchAttendancesByDate = async (req, res) => {
 const selectClassForAttendance = async (req, res) => {
   try {
     const schoolClasses = await resolveClassesForTeacher(req.currentUser._id);
-    const subjects = await Subject.find().sort({ name: 1 });
+    
+    // Requirement #2: Only show subjects assigned to the teacher
+    let subjects = [];
+    if (req.user.role === 'ADMIN') {
+      subjects = await Subject.find().sort({ name: 1 });
+    } else {
+      subjects = req.currentUser.subjects || [];
+      // Sort subjects by name if they were populated
+      subjects.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
 
     res.json({
       schoolClasses,
@@ -352,13 +358,18 @@ const markAttendanceForClass = async (req, res) => {
 
     const existingAttendanceMap = {};
     const presentStudentIds = [];
+    const statusMap = {};
     let sessionNotes = null;
 
     existingAttendances.forEach((attendance) => {
       const studentId = attendance.student?._id;
       if (!studentId) return;
-      existingAttendanceMap[String(studentId)] = serializeAttendance(attendance);
-      if (attendance.present) {
+      const serialized = serializeAttendance(attendance);
+      existingAttendanceMap[String(studentId)] = serialized;
+      // Fix #1: use status field (with fallback to present boolean for old records)
+      const st = serialized.status;
+      statusMap[String(studentId)] = st;
+      if (st === 'PRESENT') {
         presentStudentIds.push(String(studentId));
       }
       if (!sessionNotes && attendance.notes && attendance.notes.trim() !== '') {
@@ -375,7 +386,10 @@ const markAttendanceForClass = async (req, res) => {
       existingAttendances: existingAttendances.map(serializeAttendance),
       existingAttendanceMap,
       presentStudentIds,
+      statusMap,
       sessionNotes,
+      // Fix #10: let frontend know if attendance already exists so it can warn the user
+      hasExistingAttendance: existingAttendances.length > 0,
     });
   } catch (error) {
     res.status(500).json({ message: `Error loading attendance form: ${error.message}` });
@@ -415,15 +429,21 @@ const processBulkAttendance = async (req, res) => {
 
     const students = await User.find({ role: 'STUDENT', schoolClass: schoolClass._id }).select('_id');
 
-    const rows = students.map((student) => ({
-      student: student._id,
-      teacher: req.currentUser._id,
-      subject: subject ? subject._id : null,
-      schoolClass: schoolClass._id,
-      date: new Date(dateOnly),
-      present: Boolean(attendanceMap[String(student._id)]),
-      notes,
-    }));
+    const rows = students.map((student) => {
+      // Fix #2: save the string status (PRESENT/ABSENT/LATE) not a Boolean conversion
+      const rawStatus = attendanceMap[String(student._id)];
+      const status = ['PRESENT', 'LATE', 'ABSENT'].includes(rawStatus) ? rawStatus : 'ABSENT';
+      return {
+        student: student._id,
+        teacher: req.currentUser._id,
+        subject: subject ? subject._id : null,
+        schoolClass: schoolClass._id,
+        date: new Date(dateOnly),
+        present: status === 'PRESENT',
+        status,
+        notes,
+      };
+    });
 
     if (rows.length > 0) {
       await Attendance.insertMany(rows);

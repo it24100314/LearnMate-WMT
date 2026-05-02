@@ -82,7 +82,7 @@ export default function CreateExamScreen() {
             setDeadline(selectedDate);
           }
         },
-        mode: 'datetime',
+        mode: 'date',
       });
     } else {
       // iOS: Render component
@@ -258,7 +258,6 @@ export default function CreateExamScreen() {
             mode="datetime"
             display="spinner"
             onChange={handleDeadlineChange}
-            onDismiss={() => setShowDeadlinePicker(false)}
           />
         )}
 

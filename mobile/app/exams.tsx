@@ -13,6 +13,7 @@ type AnswerSheet = {
   _id: string;
   exam: string;
   student: string;
+  filePath?: string;
   submittedAt: string;
   isLate: boolean;
   status: string;
@@ -553,7 +554,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#3f51b5',
     backgroundColor: '#f5f7ff',
@@ -572,7 +572,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    alignItems: 'center',
     shadowColor: '#1f2937',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,

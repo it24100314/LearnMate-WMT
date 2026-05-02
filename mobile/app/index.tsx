@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import type { AxiosError } from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../utils/api';
+import { storage } from '../utils/storage';
 
 type ApiError = {
   message?: string;
@@ -26,9 +26,9 @@ export default function LoginScreen() {
       const response = await api.post('/auth/login', { identifier, password });
       
       if (response.data.token) {
-        await SecureStore.setItemAsync('userToken', response.data.token);
-        await SecureStore.setItemAsync('userRole', response.data.role);
-        await SecureStore.setItemAsync('userId', response.data._id);
+        await storage.setItem('userToken', response.data.token);
+        await storage.setItem('userRole', response.data.role);
+        await storage.setItem('userId', response.data._id);
 
         if (response.data.role === 'STUDENT') {
           router.replace('/(tabs)/student-dashboard');

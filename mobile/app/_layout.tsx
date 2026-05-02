@@ -3,12 +3,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 import { useRouter, useSegments } from 'expo-router';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import api from '@/utils/api';
+import { storage } from '@/utils/storage';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -18,47 +18,42 @@ export default function RootLayout() {
 
   useEffect(() => {
     const verifyToken = async () => {
+      // On web, skip the SSR context (useEffect only runs in browser, so this is browser-safe)
+      // We still check: if Platform.OS === 'web', use localStorage via storage utility
       try {
-        const token = await SecureStore.getItemAsync('userToken');
-        
+        const token = await storage.getItem('userToken');
+
         if (token) {
           // Token exists, verify it's still valid
           try {
             const response = await api.get('/users/me');
-            
             if (response.status === 200) {
-              // Token is valid
               setIsLoading(false);
               return;
             }
           } catch (error: any) {
-            // 401/403 are expected when a stored token is stale.
-            // Avoid console.error here because React Native surfaces it in LogBox.
             const status = error?.response?.status;
             if (status !== 401 && status !== 403) {
-              console.error('Token validation failed unexpectedly:', status ?? error?.message ?? error);
+              console.warn('Token validation failed:', status ?? error?.message ?? 'Network error');
             }
           }
         }
-        
-        // No token or token is invalid - clear storage
-        await SecureStore.deleteItemAsync('userToken');
-        await SecureStore.deleteItemAsync('userRole');
-        await SecureStore.deleteItemAsync('userId');
-        
+
+        // No token or invalid — clear storage
+        await storage.deleteItem('userToken');
+        await storage.deleteItem('userRole');
+        await storage.deleteItem('userId');
+
         setIsLoading(false);
-        
-        // Ensure user is on login screen
-        if (segments[0] !== undefined && segments[0] !== 'index') {
+
+        if (segments.length > 0 && segments[0] !== '(tabs)') {
           router.replace('/');
         }
       } catch (err) {
-        console.error('Error verifying token:', err);
-        // Clear storage on any error
-        await SecureStore.deleteItemAsync('userToken');
-        await SecureStore.deleteItemAsync('userRole');
-        await SecureStore.deleteItemAsync('userId');
-        
+        console.warn('Error verifying token:', err);
+        await storage.deleteItem('userToken');
+        await storage.deleteItem('userRole');
+        await storage.deleteItem('userId');
         setIsLoading(false);
         router.replace('/');
       }

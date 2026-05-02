@@ -1,10 +1,24 @@
 const Subject = require('../models/Subject');
 
-const listSubjects = async (_req, res) => {
+const listSubjects = async (req, res) => {
   try {
-    const subjects = await Subject.find().sort({ name: 1 });
+    const role = String(req.user?.role || '').toUpperCase();
+    const userId = req.user?.id;
+    console.log(`[listSubjects] User ID: ${userId}, Detected Role: ${role}`);
+
+    let subjects = [];
+    if (!role || role === 'ADMIN') {
+      console.log('[listSubjects] Fetching all subjects for ADMIN/Unknown.');
+      subjects = await Subject.find().sort({ name: 1 });
+    } else if (role === 'TEACHER') {
+      subjects = req.currentUser?.subjects || [];
+      subjects.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      console.log(`[listSubjects] Returning ${subjects.length} assigned subjects for teacher.`);
+    }
+
     res.json({ subjects });
   } catch (error) {
+    console.error('[listSubjects] Error:', error.message);
     res.status(500).json({ message: error.message });
   }
 };

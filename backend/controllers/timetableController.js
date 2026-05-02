@@ -29,7 +29,8 @@ const validateTimetablePayload = async (payload, fallbackTeacherId) => {
     throw new Error('Teacher is required');
   }
 
-  if (!payload.day) {
+  // Fix #3: accept both 'day' and 'dayOfWeek' from frontend
+  if (!payload.day && !payload.dayOfWeek) {
     throw new Error('Day is required');
   }
 
@@ -55,13 +56,31 @@ const validateTimetablePayload = async (payload, fallbackTeacherId) => {
     throw new Error('Subject not found');
   }
 
+  // Requirement #1: Strict validation for Teachers
+  if (teacher.role === 'TEACHER') {
+    const assignedClasses = teacher.assignedClasses || [];
+    const assignedSubjects = teacher.subjects || [];
+    
+    const isAssignedClass = assignedClasses.some(id => String(id._id || id) === String(schoolClass._id));
+    if (!isAssignedClass) {
+      throw new Error(`You are not assigned to class ${schoolClass.name}.`);
+    }
+
+    if (subject) {
+      const isAssignedSubject = assignedSubjects.some(id => String(id._id || id) === String(subject._id));
+      if (!isAssignedSubject) {
+        throw new Error(`You are not assigned to subject ${subject.name}.`);
+      }
+    }
+  }
+
   return {
     schoolClass,
     teacher,
     subject,
     title: payload.title && payload.title.trim() !== '' ? payload.title.trim() : 'Lecture',
     description: payload.description && payload.description.trim() !== '' ? payload.description.trim() : 'Scheduled lecture',
-    day: normalizeWeekday(payload.day),
+    day: normalizeWeekday(payload.day || payload.dayOfWeek),
     startTime: payload.startTime,
     endTime: payload.endTime,
     room: payload.room && payload.room.trim() !== '' ? payload.room.trim() : null,
@@ -83,7 +102,7 @@ const checkConflicts = async (timetableData, existingId = null) => {
 
   for (const existing of sameClassEntries) {
     if (isTimeOverlap(timetableData.startTime, timetableData.endTime, existing.startTime, existing.endTime)) {
-      throw new Error('Schedule conflict');
+      throw new Error('Schedule conflict: this class already has a session at that time.');
     }
   }
 
@@ -102,6 +121,25 @@ const checkConflicts = async (timetableData, existingId = null) => {
     if (subjectConflicts.length > 0) {
       throw new Error(
         `Subject '${timetableData.subject.name}' is already scheduled on ${timetableData.day} for class ${timetableData.schoolClass.name}. One subject can only be taught once per day for a class.`
+      );
+    }
+  }
+
+  // Fix #5: check teacher double-booking across all classes
+  const teacherFilter = {
+    teacher: timetableData.teacher._id,
+    day: timetableData.day,
+  };
+  if (existingId) {
+    teacherFilter._id = { $ne: existingId };
+  }
+
+  const teacherEntries = await Timetable.find(teacherFilter).populate('schoolClass', 'name');
+  for (const entry of teacherEntries) {
+    if (isTimeOverlap(timetableData.startTime, timetableData.endTime, entry.startTime, entry.endTime)) {
+      const className = entry.schoolClass?.name || 'another class';
+      throw new Error(
+        `Teacher is already assigned to ${className} on ${timetableData.day} at ${entry.startTime}–${entry.endTime}. Double-booking is not allowed.`
       );
     }
   }
@@ -136,7 +174,9 @@ const getTimetables = async (req, res) => {
         return res.json({ timetables: [], error: 'No class assigned. Please contact your administrator.' });
       }
 
-      const subjectIds = (req.currentUser.subjects || []).map((subject) => String(subject._id || subject));
+      const subjectIds = (req.currentUser.subjects || [])
+        .map((subject) => String(subject._id || subject));
+
       const baseQuery = {
         schoolClass: req.currentUser.schoolClass,
       };
@@ -149,7 +189,14 @@ const getTimetables = async (req, res) => {
         .populate(TIMETABLE_POPULATE)
         .sort({ day: 1, startTime: 1 });
 
-      timetables = timetables.filter((entry) => !entry.subject || subjectIds.includes(String(entry.subject._id)));
+      if (subjectIds.length > 0) {
+        // Student has subjects assigned — only show matching subject entries
+        // Entries without a subject are NOT shown (they are general admin slots, not for students)
+        timetables = timetables.filter(
+          (entry) => entry.subject && subjectIds.includes(String(entry.subject._id))
+        );
+      }
+      // If student has no subjects assigned yet, show all class entries (graceful fallback)
     } else if (req.user.role === 'TEACHER') {
       if (!classId) {
         info = 'Please select a class to view its timetable.';
@@ -323,6 +370,36 @@ const searchTimetablesByDay = async (req, res) => {
   }
 };
 
+/**
+ * GET /timetables/my
+ * Returns all timetable entries assigned to the current teacher.
+ * Admins see everything. Students are not permitted to call this.
+ */
+const getMyTimetables = async (req, res) => {
+  try {
+    const day = req.query.day ? normalizeWeekday(req.query.day) : null;
+    let query = {};
+
+    if (req.user.role === 'TEACHER') {
+      // Only this teacher's entries
+      query.teacher = req.currentUser._id;
+    }
+    // ADMIN sees all — query stays empty
+
+    if (day) {
+      query.day = day;
+    }
+
+    const timetables = await Timetable.find(query)
+      .populate(TIMETABLE_POPULATE)
+      .sort({ day: 1, startTime: 1 });
+
+    res.json({ timetables: timetables.map(serializeTimetable) });
+  } catch (error) {
+    res.status(500).json({ message: `Error loading timetables: ${error.message}` });
+  }
+};
+
 module.exports = {
   createTimetable,
   getTimetables,
@@ -330,4 +407,5 @@ module.exports = {
   updateTimetable,
   deleteTimetable,
   searchTimetablesByDay,
+  getMyTimetables,
 };

@@ -5,26 +5,14 @@ const User = require('../models/User');
 const getTeacherClasses = async (req, res) => {
   try {
     const teacherId = req.params.id;
-    const timetables = await Timetable.find({ teacher: teacherId }).populate('schoolClass');
+    const teacher = await User.findById(teacherId).populate('assignedClasses');
     
-    const seen = new Set();
-    const classes = [];
-    timetables.forEach((entry) => {
-      if (entry.schoolClass?._id) {
-        const key = String(entry.schoolClass._id);
-        if (!seen.has(key)) {
-          seen.add(key);
-          classes.push(entry.schoolClass);
-        }
-      }
-    });
-
-    if (classes.length === 0) {
-      // If no timetables assigned, might fallback or just return empty. The Java logic returned all classes if 0 in some places, but returning empty array is safer.
-      const all = await SchoolClass.find().sort({ name: 1 });
-      return res.json(all);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
     }
 
+    // Requirement #1: Show only assigned classes
+    const classes = teacher.assignedClasses || [];
     res.json(classes.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -53,9 +41,22 @@ const createClass = async (req, res) => {
 
 const getClasses = async (req, res) => {
   try {
-    const classes = await SchoolClass.find().populate('students', 'name email role');
+    const role = String(req.user?.role || '').toUpperCase();
+    const userId = req.user?.id;
+    console.log(`[getClasses] User ID: ${userId}, Detected Role: ${role}`);
+
+    let classes = [];
+    if (!role || role === 'ADMIN') {
+      console.log('[getClasses] Fetching all classes for ADMIN/Unknown.');
+      classes = await SchoolClass.find().populate('students', 'name email role');
+    } else if (role === 'TEACHER') {
+      classes = req.currentUser?.assignedClasses || [];
+      console.log(`[getClasses] Returning ${classes.length} assigned classes for teacher.`);
+    }
+
     res.json(classes);
   } catch (error) {
+    console.error('[getClasses] Error:', error.message);
     res.status(500).json({ message: error.message });
   }
 };

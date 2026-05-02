@@ -12,7 +12,7 @@ type Exam = { _id: string; title: string; maxMarks: number; subject?: NamedItem 
 type AnswerSheet = {
   _id: string;
   exam: string;
-  student: string;
+  student: { _id: string; name: string };
   filePath?: string;
   submittedAt?: string;
   isLate?: boolean;

@@ -7,6 +7,7 @@ const {
   updateTimetable,
   deleteTimetable,
   searchTimetablesByDay,
+  getMyTimetables,
 } = require('../controllers/timetableController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { buildUploader } = require('../middleware/uploadMiddleware');
@@ -20,6 +21,7 @@ router.route('/')
   .post(authorize('ADMIN', 'TEACHER'), uploadTimetable, createTimetable);
 
 router.get('/list', getTimetables);
+router.get('/my', getMyTimetables);    // teacher's own sessions
 router.get('/student/:studentId', getTimetables);
 
 router.get('/search', searchTimetablesByDay);
