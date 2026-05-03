@@ -26,6 +26,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/learnmate')
 
 const seedDatabase = async () => {
   try {
+    console.log('Deleting old data...');
     // Clear existing data to ensure a clean database
     await Fee.deleteMany({});
     await Notification.deleteMany({});
@@ -37,6 +38,7 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     console.log('✓ Existing data cleared');
 
+    console.log('Creating subjects...');
     // 1. Create Subjects
     const subjects = await Subject.insertMany([
       { name: 'Science' },
@@ -48,6 +50,7 @@ const seedDatabase = async () => {
     ]);
     console.log(`✓ ${subjects.length} Subjects created`);
 
+    console.log('Creating classes...');
     // 2. Create School Classes (Grade 6 to 11)
     const classes = await SchoolClass.insertMany([
       { name: 'Grade 6', description: 'Middle School' },
@@ -59,6 +62,7 @@ const seedDatabase = async () => {
     ]);
     console.log(`✓ ${classes.length} School Classes created`);
 
+    console.log('Creating users...');
     // 3. Create 3 Core Users (ADMIN, TEACHER, STUDENT)
     // NOTE: Passwords are PLAIN TEXT here. The User.js pre('save') hook will hash them.
     const admin = await User.create({
@@ -97,6 +101,7 @@ const seedDatabase = async () => {
 
     console.log('✓ Core users created\n');
 
+    console.log('Creating timetable entries...');
     // 4. Create sample Timetable entries
     const timetableExamples = await Timetable.insertMany([
       {
@@ -132,6 +137,7 @@ const seedDatabase = async () => {
     ]);
     console.log(`✓ ${timetableExamples.length} Timetable entries created`);
 
+    console.log('Setting up uploads directories...');
     // 4.5 Setup uploads directories and dummy files
     const uploadsDir = path.join(__dirname, 'uploads');
     const dirsToCreate = ['exams', 'answer-sheets', 'submissions'];
@@ -152,6 +158,7 @@ const seedDatabase = async () => {
     }
     console.log('✓ Uploads directories and dummy files verified');
 
+    console.log('Creating exams...');
     // 5. Create sample Exams
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
@@ -168,6 +175,7 @@ const seedDatabase = async () => {
     });
     console.log('✓ Sample Exam created');
 
+    console.log('Creating fees...');
     // 6. Create sample Fees
     const fee = await Fee.create({
       student: student._id,
@@ -192,12 +200,13 @@ const seedDatabase = async () => {
     console.log('- Teacher "John Smith" teaches Science and Mathematics in Grade 10 & 11');
     console.log('='.repeat(50) + '\n');
 
+    await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);
+    await mongoose.connection.close();
     process.exit(1);
   }
 };
 
-// DISABLED FOR VIVA DEMO
-// seedDatabase();
+seedDatabase();
