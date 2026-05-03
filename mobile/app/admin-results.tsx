@@ -9,8 +9,9 @@ type MarkData = {
   _id: string;
   student: { _id: string; name: string; username: string };
   exam: { _id: string; title: string; maxMarks: number; passMarks: number };
-  marksObtained?: number;
-  status: 'Pending' | 'Graded';
+  score?: number;
+  comments?: string;
+  published?: boolean;
 };
 
 export default function AdminResultsScreen() {
@@ -83,9 +84,9 @@ export default function AdminResultsScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const isGraded = item.status === 'Graded';
+          const isGraded = item.score !== undefined && item.score !== null;
           const statColor = isGraded ? '#3f51b5' : '#cbd5e1';
-          const statText = isGraded ? `${item.marksObtained} / ${examMeta.maxMarks}` : 'PENDING';
+          const statText = isGraded ? `${item.score} / ${examMeta.maxMarks}` : 'PENDING';
 
           return (
             <View style={styles.card}>

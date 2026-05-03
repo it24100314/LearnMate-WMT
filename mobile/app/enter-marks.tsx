@@ -83,6 +83,7 @@ export default function EnterMarksScreen() {
       // Fetch answer sheets for the selected exam
       const reviewRes = await api.get(`/exams/review-answers/${examId}`);
       const answerSheets = reviewRes.data?.answerSheets || [];
+      const markMap = reviewRes.data?.markMap || {};
 
       const submissionsMap: Record<string, AnswerSheet> = {};
       if (Array.isArray(answerSheets)) {
@@ -93,10 +94,20 @@ export default function EnterMarksScreen() {
         });
       }
 
+      const prefilledMarks: Record<string, { score: string, comments: string }> = {};
+      Object.keys(markMap).forEach(studentId => {
+        prefilledMarks[studentId] = {
+          score: markMap[studentId].score !== undefined && markMap[studentId].score !== null ? String(markMap[studentId].score) : '',
+          comments: markMap[studentId].comments || ''
+        };
+      });
+
       setSubmissions(submissionsMap);
+      setMarksData(prefilledMarks);
     } catch (err: any) {
       console.error('Error fetching submissions:', err?.response?.status, err?.message);
       setSubmissions({});
+      setMarksData({});
     }
   };
 
