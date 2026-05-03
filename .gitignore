@@ -15,4 +15,6 @@ mobile/.expo/
 Thumbs.db
 ehthumbs.db
 
-
+# IDE Files
+.idea/
+*.iml
