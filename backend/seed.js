@@ -199,4 +199,5 @@ const seedDatabase = async () => {
   }
 };
 
-seedDatabase();
+// DISABLED FOR VIVA DEMO
+// seedDatabase();

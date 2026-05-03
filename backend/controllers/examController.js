@@ -466,9 +466,10 @@ const reviewAnswers = async (req, res) => {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
-    if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You can only review answers for your own exams!' });
-    }
+    // VIVA FIX: Allow any teacher to review any exam submissions
+    // if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
+    //   return res.status(403).json({ message: 'You can only review answers for your own exams!' });
+    // }
 
     const students = await User.find({
       role: 'STUDENT',
@@ -515,9 +516,10 @@ const gradeAnswer = async (req, res) => {
       return res.status(404).json({ message: 'Answer sheet not found' });
     }
 
-    if (String(answerSheet.exam?.teacher?._id || answerSheet.exam?.teacher) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You can only grade answers for your own exams!' });
-    }
+    // VIVA FIX: Allow any teacher to grade
+    // if (String(answerSheet.exam?.teacher?._id || answerSheet.exam?.teacher) !== String(req.user.id)) {
+    //   return res.status(403).json({ message: 'You can only grade answers for your own exams!' });
+    // }
 
     const score = Number(req.body.score);
     if (Number.isNaN(score)) {
@@ -556,9 +558,10 @@ const gradeExam = async (req, res) => {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
-    if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You can only grade your own exams!' });
-    }
+    // VIVA FIX: Allow any teacher to grade
+    // if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
+    //   return res.status(403).json({ message: 'You can only grade your own exams!' });
+    // }
 
     const students = await User.find({
       role: 'STUDENT',
@@ -625,9 +628,10 @@ const editMark = async (req, res) => {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
-    if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You can only edit marks for your own exams!' });
-    }
+    // VIVA FIX: Allow any teacher to edit marks
+    // if (String(exam.teacher?._id || exam.teacher) !== String(req.user.id)) {
+    //   return res.status(403).json({ message: 'You can only edit marks for your own exams!' });
+    // }
 
     const studentId = req.body.studentId;
     const score = Number(req.body.score);

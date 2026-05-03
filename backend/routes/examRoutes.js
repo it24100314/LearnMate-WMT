@@ -38,9 +38,9 @@ router.delete('/delete/:id', authorize('TEACHER', 'ADMIN'), deleteExam);
 
 router.post('/upload-answer/:id', authorize('STUDENT'), answerUpload, uploadAnswer);
 router.delete('/delete-answer/:id', authorize('STUDENT'), deleteAnswerSheet);
-router.get('/review-answers/:id', authorize('TEACHER'), reviewAnswers);
-router.post('/grade-answer/:answerSheetId', authorize('TEACHER'), gradeAnswer);
-router.post('/grade-exam/:id', authorize('TEACHER'), gradeExam);
-router.post('/edit-mark/:examId', authorize('TEACHER'), editMark);
+router.get('/review-answers/:id', authorize('TEACHER', 'ADMIN'), reviewAnswers);
+router.post('/grade-answer/:answerSheetId', authorize('TEACHER', 'ADMIN'), gradeAnswer);
+router.post('/grade-exam/:id', authorize('TEACHER', 'ADMIN'), gradeExam);
+router.post('/edit-mark/:examId', authorize('TEACHER', 'ADMIN'), editMark);
 
 module.exports = router;
