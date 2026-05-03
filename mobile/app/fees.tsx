@@ -516,8 +516,11 @@ export default function FeesScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <TextInput placeholder="Amount" value={createFeeDraft.amount} onChangeText={(t) => setCreateFeeDraft((p) => ({ ...p, amount: t }))} keyboardType="decimal-pad" style={styles.input} />
-              <TextInput placeholder="Due Date (YYYY-MM-DD)" value={createFeeDraft.dueDate} onChangeText={(t) => setCreateFeeDraft((p) => ({ ...p, dueDate: t }))} style={styles.input} />
+              <Text style={{ marginBottom: 6, color: '#475569' }}>Amount</Text>
+              <TextInput placeholder="Amount" placeholderTextColor="#8a94a6" value={createFeeDraft.amount} onChangeText={(t) => setCreateFeeDraft((p) => ({ ...p, amount: t }))} keyboardType="decimal-pad" style={styles.input} />
+
+              <Text style={{ marginBottom: 6, color: '#475569' }}>Due Date</Text>
+              <TextInput placeholder="Due Date (YYYY-MM-DD)" placeholderTextColor="#8a94a6" value={createFeeDraft.dueDate} onChangeText={(t) => setCreateFeeDraft((p) => ({ ...p, dueDate: t }))} style={styles.input} />
               <TouchableOpacity style={styles.button} onPress={createFee}>
                 <Text style={styles.buttonText}>Submit</Text>
               </TouchableOpacity>
@@ -548,8 +551,11 @@ export default function FeesScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <TextInput placeholder="Amount" value={createSubjectDraft.amount} onChangeText={(t) => setCreateSubjectDraft((p) => ({ ...p, amount: t }))} keyboardType="decimal-pad" style={styles.input} />
-              <TextInput placeholder="Due Date (YYYY-MM-DD)" value={createSubjectDraft.dueDate} onChangeText={(t) => setCreateSubjectDraft((p) => ({ ...p, dueDate: t }))} style={styles.input} />
+              <Text style={{ marginBottom: 6, color: '#475569' }}>Amount</Text>
+              <TextInput placeholder="Amount" placeholderTextColor="#8a94a6" value={createSubjectDraft.amount} onChangeText={(t) => setCreateSubjectDraft((p) => ({ ...p, amount: t }))} keyboardType="decimal-pad" style={styles.input} />
+
+              <Text style={{ marginBottom: 6, color: '#475569' }}>Due Date</Text>
+              <TextInput placeholder="Due Date (YYYY-MM-DD)" placeholderTextColor="#8a94a6" value={createSubjectDraft.dueDate} onChangeText={(t) => setCreateSubjectDraft((p) => ({ ...p, dueDate: t }))} style={styles.input} />
               <TouchableOpacity style={styles.button} onPress={createSubjectFee}>
                 <Text style={styles.buttonText}>Create</Text>
               </TouchableOpacity>
