@@ -5,6 +5,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
+import { storage } from '../../utils/storage';
 
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,12 @@ export default function StudentDashboard() {
 
   const fetchData = async () => {
     try {
+      const role = await storage.getItem('userRole');
+      if (role !== 'STUDENT') {
+        setLoading(false);
+        return;
+      }
+      
       setError(null);
       const [examsRes, marksRes, notificationsRes, feesRes] = await Promise.all([
         api.get('/exams/list'),

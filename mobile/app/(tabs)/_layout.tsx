@@ -39,30 +39,33 @@ export default function TabLayout() {
           fontWeight: '600',
         },
       }}>
-      <Tabs.Screen
-        name="student-dashboard"
-        options={{
-          title: 'Student',
-          href: role === 'STUDENT' ? '/(tabs)/student-dashboard' : null,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="books.vertical.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="teacher-dashboard"
-        options={{
-          title: 'Teacher',
-          href: role === 'TEACHER' ? '/(tabs)/teacher-dashboard' : null,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="briefcase.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="admin-dashboard"
-        options={{
-          title: 'Admin',
-          href: role === 'ADMIN' ? '/(tabs)/admin-dashboard' : null,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="building.columns.fill" color={color} />,
-        }}
-      />
+      {role === 'STUDENT' && (
+        <Tabs.Screen
+          name="student-dashboard"
+          options={{
+            title: 'Student',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="books.vertical.fill" color={color} />,
+          }}
+        />
+      )}
+      {role === 'TEACHER' && (
+        <Tabs.Screen
+          name="teacher-dashboard"
+          options={{
+            title: 'Teacher',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="briefcase.fill" color={color} />,
+          }}
+        />
+      )}
+      {role === 'ADMIN' && (
+        <Tabs.Screen
+          name="admin-dashboard"
+          options={{
+            title: 'Admin',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="building.columns.fill" color={color} />,
+          }}
+        />
+      )}
       <Tabs.Screen
         name="profile"
         options={{
