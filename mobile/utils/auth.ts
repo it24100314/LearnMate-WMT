@@ -23,9 +23,6 @@ export const logout = async (router: any, message: string = 'Session expired. Pl
     await clearAuthData();
     
     const executeLogout = () => {
-      try {
-        if (router.dismissAll) router.dismissAll();
-      } catch(e) {}
       router.replace('/');
     };
 
