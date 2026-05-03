@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    verifyAuth();
-  }, []);
+    if (isFocused) {
+      verifyAuth();
+    }
+  }, [isFocused]);
 
   const verifyAuth = async () => {
     try {

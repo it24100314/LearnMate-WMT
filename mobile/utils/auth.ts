@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { storage } from './storage';
 import { useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 
@@ -7,9 +7,9 @@ import { Alert } from 'react-native';
  */
 export const clearAuthData = async () => {
   try {
-    await SecureStore.deleteItemAsync('userToken');
-    await SecureStore.deleteItemAsync('userRole');
-    await SecureStore.deleteItemAsync('userId');
+    await storage.deleteItem('userToken');
+    await storage.deleteItem('userRole');
+    await storage.deleteItem('userId');
   } catch (error) {
     console.error('Error clearing auth data:', error);
   }
@@ -22,16 +22,23 @@ export const logout = async (router: any, message: string = 'Session expired. Pl
   try {
     await clearAuthData();
     
+    const executeLogout = () => {
+      try {
+        if (router.dismissAll) router.dismissAll();
+      } catch(e) {}
+      router.replace('/');
+    };
+
     // Show alert if message is provided
     if (message) {
-      Alert.alert('Session Expired', message, [
+      Alert.alert('Logged Out', message, [
         {
           text: 'OK',
-          onPress: () => router.replace('/'),
+          onPress: executeLogout,
         },
       ]);
     } else {
-      router.replace('/');
+      executeLogout();
     }
   } catch (error) {
     console.error('Error during logout:', error);
@@ -50,9 +57,10 @@ export const handleApiError = async (
   const status = error?.response?.status;
   const message = error?.response?.data?.message || defaultMessage;
 
-  // If unauthorized, log out the user
+  // Don't auto-logout to prevent navigation bugs on swipe-back.
+  // The user must manually click logout to reach the login screen.
   if (status === 401 || status === 403) {
-    await logout(router, 'Your session has expired. Please log in again.');
+    Alert.alert('Access Denied', message || 'You do not have permission for this action.');
     return 'unauthorized';
   }
 
