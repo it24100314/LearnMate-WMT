@@ -25,6 +25,7 @@ type NotificationItem = {
   targetRole?: string;
   targetClass?: SchoolClass;
   fileName?: string;
+  createdBy?: { name: string; role: string };
 };
 
 export default function NotificationsScreen() {
@@ -32,13 +33,12 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [downloadingNotificationId, setDownloadingNotificationId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const inboxTitle = useMemo(() => {
-    if (role === 'STUDENT') return 'Student Inbox';
-    if (role === 'TEACHER') return 'Teacher Inbox';
-    if (role === 'ADMIN') return 'Admin Inbox';
-    return 'Inbox';
+    if (role === 'STUDENT') return 'Student Portal';
+    if (role === 'TEACHER') return 'Teacher Board';
+    return 'Admin Feed';
   }, [role]);
 
   const loadData = async () => {
@@ -46,10 +46,9 @@ export default function NotificationsScreen() {
       const savedRole = await SecureStore.getItemAsync('userRole');
       setRole(savedRole || '');
 
-      const listResponse = await api.get('/notifications/visible');
-      setNotifications(listResponse.data?.notifications ?? []);
-    } catch (error: any) {
-      Alert.alert('Notifications', error?.response?.data?.message || 'Failed to load notifications');
+      const response = await api.get('/notifications/visible');
+      setNotifications(response.data?.notifications ?? []);
+    } catch (error) {
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -57,191 +56,124 @@ export default function NotificationsScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const markRead = async (id: string) => {
     try {
       await api.post(`/notifications/mark-read/${id}`);
-      setNotifications((prev) => prev.map((item) => (item._id === id ? { ...item, read: true } : item)));
-    } catch {
-      // Keep UX responsive even if mark-read fails.
-    }
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    } catch (e) {}
   };
 
-  const downloadAttachment = async (item: NotificationItem) => {
+  const downloadFile = async (item: NotificationItem) => {
     try {
-      setDownloadingNotificationId(item._id);
-      const fileName = item.fileName || `${item.title || 'notification'}_${item._id}.pdf`;
-
-      const downloadResult = await downloadAndShareApiFile({
+      setDownloadingId(item._id);
+      await downloadAndShareApiFile({
         endpoint: `/notifications/download/${item._id}`,
-        fileName,
-        dialogTitle: 'Open or share attachment',
+        fileName: item.fileName || 'attachment.pdf',
+        dialogTitle: 'Download Attachment',
       });
-
-      if (!downloadResult.shared) {
-        Alert.alert('Downloaded', `Attachment saved to ${downloadResult.uri}`);
-      }
-    } catch (error: any) {
-      Alert.alert('Download Failed', error?.message || 'Unable to download attachment');
+    } catch (err) {
+      Alert.alert('Error', 'Could not download file');
     } finally {
-      setDownloadingNotificationId(null);
+      setDownloadingId(null);
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3f51b5" />
-      </View>
-    );
-  }
+  if (loading) return (
+    <View style={styles.center}><ActivityIndicator size="large" color="#4f46e5" /></View>
+  );
 
   return (
-    <FlatList
-      data={notifications}
-      keyExtractor={(item) => item._id}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => {
-            setRefreshing(true);
-            loadData();
-          }}
-        />
-      }
-      contentContainerStyle={styles.content}
-      ListHeaderComponent={
-        <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Notifications</Text>
-          <Text style={styles.heroText}>{inboxTitle} - tap a message to mark it as read.</Text>
-        </View>
-      }
-      ListEmptyComponent={<Text style={styles.empty}>No notifications available.</Text>}
-      renderItem={({ item }) => (
-        <TouchableOpacity style={[styles.notificationCard, !item.read && styles.unread]} onPress={() => markRead(item._id)}>
-          <Text style={styles.notificationTitle}>{item.title}</Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-          <Text style={styles.meta}>Date: {new Date(item.createdAt).toLocaleString()}</Text>
-          {item.targetRole ? <Text style={styles.meta}>Role: {item.targetRole}</Text> : null}
-          {item.targetClass?.name ? <Text style={styles.meta}>Class: {item.targetClass.name}</Text> : null}
-          {item.fileName ? <Text style={styles.meta}>Attachment: {item.fileName}</Text> : null}
-          {item.fileName ? (
-            <TouchableOpacity
-              style={styles.downloadButton}
-              onPress={() => downloadAttachment(item)}
-              disabled={downloadingNotificationId === item._id}
-            >
-              <Ionicons name="download-outline" size={16} color="#3f51b5" />
-              <Text style={styles.downloadButtonText}>
-                {downloadingNotificationId === item._id ? 'Downloading...' : 'Download Attachment'}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-          {!item.read ? <Text style={styles.unreadText}>Tap to mark as read</Text> : null}
-        </TouchableOpacity>
-      )}
-    />
+    <View style={styles.container}>
+      <FlatList
+        data={notifications}
+        keyExtractor={item => item._id}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{inboxTitle}</Text>
+            <Text style={styles.headerSubtitle}>Stay updated with the latest campus announcements</Text>
+          </View>
+        }
+        ListEmptyComponent={<Text style={styles.empty}>No messages yet</Text>}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => markRead(item._id)}
+            style={[styles.card, !item.read && styles.unreadCard]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={styles.authorBadge}>
+                <Ionicons name="person-circle-outline" size={20} color="#6366f1" />
+                <Text style={styles.authorText}>{item.createdBy?.name || 'System'}</Text>
+              </View>
+              {!item.read && <View style={styles.dot} />}
+            </View>
+
+            <Text style={[styles.title, !item.read && { color: '#1e1b4b' }]}>{item.title}</Text>
+            <Text style={styles.message} numberOfLines={3}>{item.message}</Text>
+            
+            <View style={styles.footer}>
+              <View style={styles.metaRow}>
+                <Ionicons name="time-outline" size={14} color="#94a3b8" />
+                <Text style={styles.metaText}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+              </View>
+
+              {item.fileName ? (
+                <TouchableOpacity 
+                  onPress={() => downloadFile(item)}
+                  style={styles.downloadBtn}
+                  disabled={downloadingId === item._id}
+                >
+                  <Ionicons name="cloud-download-outline" size={18} color="#4f46e5" />
+                  <Text style={styles.downloadText}>{downloadingId === item._id ? '...' : 'File'}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: 16,
-    paddingBottom: 30,
-    backgroundColor: '#f8f9fa',
-    flexGrow: 1,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  heroCard: {
-    backgroundColor: '#ffffff',
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  list: { padding: 20 },
+  header: { marginBottom: 24 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: '#1e293b' },
+  headerSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  card: {
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
-    marginBottom: 14,
-    shadowColor: '#1f2937',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1f2937',
-  },
-  heroText: {
-    marginTop: 6,
-    color: '#64748b',
-    lineHeight: 20,
-    fontSize: 14,
-  },
-  notificationCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 10,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#edf0f5',
-    shadowColor: '#1f2937',
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: 2,
   },
-  unread: {
-    borderColor: '#cfd8ff',
+  unreadCard: {
+    borderColor: '#e0e7ff',
     backgroundColor: '#f5f7ff',
   },
-  notificationTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  notificationMessage: {
-    color: '#475569',
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  meta: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 2,
-  },
-  unreadText: {
-    marginTop: 6,
-    color: '#3f51b5',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  downloadButton: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#cfd8ff',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#edf2ff',
-  },
-  downloadButtonText: {
-    color: '#3f51b5',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  empty: {
-    color: '#64748b',
-    textAlign: 'center',
-    marginTop: 10,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  authorBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#eff6ff', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 },
+  authorText: { fontSize: 12, fontWeight: '700', color: '#6366f1' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#6366f1' },
+  title: { fontSize: 18, fontWeight: '800', color: '#334155', marginBottom: 6 },
+  message: { fontSize: 14, color: '#64748b', lineHeight: 20 },
+  footer: { marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#eef2ff', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10 },
+  downloadText: { fontSize: 12, fontWeight: '700', color: '#4f46e5' },
+  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 16 },
 });
+

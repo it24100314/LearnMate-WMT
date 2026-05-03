@@ -2,9 +2,10 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import api from '@/utils/api';
@@ -78,6 +79,14 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: '#ffffff' },
           headerTintColor: '#1f2937',
           headerTitleStyle: { fontWeight: '700' },
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/profile')}
+              style={{ marginRight: 15 }}
+            >
+              <Ionicons name="person-circle-outline" size={26} color="#3f51b5" />
+            </TouchableOpacity>
+          ),
           contentStyle: { backgroundColor: '#f8f9fa' },
         }}
       >

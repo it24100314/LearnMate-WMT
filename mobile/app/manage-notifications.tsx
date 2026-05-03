@@ -10,6 +10,8 @@ import {
   StyleSheet,
   Modal,
   TextInput,
+  Platform,
+  Text,
 } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -17,6 +19,8 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as SecureStore from 'expo-secure-store';
 import { useLocalSearchParams } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import { Ionicons } from '@expo/vector-icons';
 import api from '@/utils/api';
 
 interface SchoolClass {
@@ -34,10 +38,10 @@ interface Notification {
   title: string;
   message: string;
   targetRole: string;
-  targetClass?: string;
   createdAt: string;
   roles: string[];
   classes: string[];
+  fileName?: string;
 }
 
 const ManageNotificationsScreen = () => {
@@ -47,6 +51,7 @@ const ManageNotificationsScreen = () => {
   const showComposeSection = mode !== 'manage';
 
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const backgroundColor = Colors[colorScheme ?? 'light'].background;
   const textColor = Colors[colorScheme ?? 'light'].text;
   const tintColor = Colors[colorScheme ?? 'light'].tint;
@@ -57,6 +62,7 @@ const ManageNotificationsScreen = () => {
   const [targetRoles, setTargetRoles] = useState<string[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [attachment, setAttachment] = useState<DocumentPicker.DocumentPickerResult | null>(null);
 
   // Data state
   const [allClasses, setAllClasses] = useState<SchoolClass[]>([]);
@@ -72,493 +78,290 @@ const ManageNotificationsScreen = () => {
   const [editMessage, setEditMessage] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Check if teacher/admin
   useEffect(() => {
     const checkRole = async () => {
       const role = await SecureStore.getItemAsync('userRole');
-
       if (role !== 'TEACHER' && role !== 'ADMIN') {
         Alert.alert('Access Denied', 'Only teachers and admins can manage notifications');
         setLoading(false);
         return;
       }
-
       await loadData();
     };
-
     checkRole();
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Get options (classes and subjects)
-      const optionsResponse = await api.get('/notifications/options');
+      const [optionsResponse, listResponse] = await Promise.all([
+        api.get('/notifications/options'),
+        api.get('/notifications/list')
+      ]);
 
       if (optionsResponse.data) {
         setAllClasses(optionsResponse.data.schoolClasses || []);
         setAllSubjects(optionsResponse.data.teacherSubjects || []);
       }
 
-      // Get sent notifications
-      const listResponse = await api.get('/notifications/list');
-
       if (listResponse.data) {
         setSentNotifications(
           listResponse.data.sentNotifications?.map((view: any) => ({
-            _id: view.notification._id,
-            title: view.notification.title,
-            message: view.notification.message,
-            createdAt: view.notification.createdAt,
-            roles: view.roles || [],
-            classes: view.classes || [],
+            _id: view.notification?._id,
+            title: view.notification?.title || 'No Title',
+            message: view.notification?.message || '',
+            createdAt: view.notification?.createdAt || new Date().toISOString(),
+            roles: Array.isArray(view.roles) ? view.roles : [],
+            classes: Array.isArray(view.classes) ? view.classes : [],
+            fileName: view.notification?.fileName,
           })) || []
         );
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
-
-  const handleToggleRole = (role: string) => {
-    setTargetRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
-  };
-
-  const handleToggleClass = (classId: string) => {
-    setSelectedClasses((prev) =>
-      prev.includes(classId)
-        ? prev.filter((c) => c !== classId)
-        : [...prev, classId]
-    );
-  };
-
-  const handleToggleSubject = (subjectId: string) => {
-    setSelectedSubjects((prev) =>
-      prev.includes(subjectId)
-        ? prev.filter((s) => s !== subjectId)
-        : [...prev, subjectId]
-    );
+  const pickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled) {
+        setAttachment(result);
+      }
+    } catch (err) {
+      console.error('Document pick error:', err);
+    }
   };
 
   const handleSendNotification = async () => {
-    if (!title.trim()) {
-      Alert.alert('Validation', 'Please enter a title');
+    if (!title.trim() || !message.trim() || targetRoles.length === 0) {
+      Alert.alert('Validation', 'Title, message, and at least one role are required');
       return;
     }
 
-    if (!message.trim()) {
-      Alert.alert('Validation', 'Please enter a message');
+    if (targetRoles.includes('STUDENT') && selectedClasses.length === 0) {
+      Alert.alert('Validation', 'When targeting students, please select at least one class');
       return;
-    }
-
-    if (targetRoles.length === 0) {
-      Alert.alert('Validation', 'Please select at least one role');
-      return;
-    }
-
-    if (targetRoles.includes('STUDENT')) {
-      if (selectedClasses.length === 0) {
-        Alert.alert('Validation', 'When targeting students, select at least one class');
-        return;
-      }
-      if (selectedSubjects.length === 0) {
-        Alert.alert('Validation', 'When targeting students, select at least one subject');
-        return;
-      }
     }
 
     try {
       setSending(true);
+      
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('message', message.trim());
+      
+      targetRoles.forEach(role => formData.append('targetRoles[]', role));
+      selectedClasses.forEach(id => formData.append('selectedClasses[]', id));
+      selectedSubjects.forEach(id => formData.append('selectedSubjects[]', id));
 
-      const response = await api.post('/notifications/create', {
-        title: title.trim(),
-        message: message.trim(),
-        targetRoles,
-        selectedClasses: targetRoles.includes('STUDENT') ? selectedClasses : [],
-        selectedSubjects: targetRoles.includes('STUDENT') ? selectedSubjects : [],
+      if (attachment && !attachment.canceled) {
+        const file = attachment.assets[0];
+        formData.append('file', {
+          uri: Platform.OS === 'ios' ? file.uri.replace('file://', '') : file.uri,
+          name: file.name,
+          type: file.mimeType || 'application/octet-stream',
+        } as any);
+      }
+
+      await api.post('/notifications/create', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (response.data) {
-        Alert.alert('Success', 'Notification sent successfully');
-        setTitle('');
-        setMessage('');
-        setTargetRoles([]);
-        setSelectedClasses([]);
-        setSelectedSubjects([]);
-        await loadData();
-      }
+      Alert.alert('Success', 'Announcement broadcasted successfully');
+      setTitle('');
+      setMessage('');
+      setTargetRoles([]);
+      setSelectedClasses([]);
+      setSelectedSubjects([]);
+      setAttachment(null);
+      await loadData();
     } catch (error: any) {
-      console.error('Error sending notification:', error);
-      Alert.alert('Error', error?.response?.data?.message || 'Failed to send notification');
+      Alert.alert('Error', error?.response?.data?.message || 'Failed to send');
     } finally {
       setSending(false);
     }
   };
 
-  const handleEditNotification = (notification: Notification) => {
-    setEditingId(notification._id);
-    setEditTitle(notification.title);
-    setEditMessage(notification.message);
-    setShowEditModal(true);
-  };
-
   const handleUpdateNotification = async () => {
-    if (!editTitle.trim() || !editMessage.trim()) {
-      Alert.alert('Validation', 'Title and message are required');
-      return;
-    }
-
+    if (!editTitle.trim() || !editMessage.trim()) return;
     try {
-      const response = await api.put(`/notifications/edit/${editingId}`, {
+      await api.put(`/notifications/edit/${editingId}`, {
         title: editTitle.trim(),
         message: editMessage.trim(),
       });
-
-      if (response.data) {
-        Alert.alert('Success', 'Notification updated successfully');
-        setShowEditModal(false);
-        setEditingId(null);
-        await loadData();
-      }
+      setShowEditModal(false);
+      await loadData();
     } catch (error: any) {
-      console.error('Error updating notification:', error);
-      Alert.alert('Error', error?.response?.data?.message || 'Failed to update notification');
+      Alert.alert('Error', 'Update failed');
     }
   };
 
-  const handleDeleteNotification = (notificationId: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this notification?', [
+  const handleDelete = (id: string) => {
+    Alert.alert('Delete Announcement', 'Are you sure you want to retract this announcement?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const response = await api.delete(`/notifications/delete/${notificationId}`);
-
-            if (response.data) {
-              Alert.alert('Success', 'Notification deleted successfully');
-              await loadData();
-            }
-          } catch (error: any) {
-            console.error('Error deleting notification:', error);
-            Alert.alert('Error', error?.response?.data?.message || 'Failed to delete notification');
-          }
-        },
-      },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        await api.delete(`/notifications/delete/${id}`);
+        loadData();
+      }}
     ]);
   };
 
-  if (loading) {
-    return (
-      <ThemedView style={[styles.centerContainer, { backgroundColor }]}>
-        <ActivityIndicator size="large" color={tintColor} />
-      </ThemedView>
-    );
-  }
+  if (loading) return (
+    <View style={[styles.center, { backgroundColor }]}>
+      <ActivityIndicator size="large" color={tintColor} />
+    </View>
+  );
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
+        contentContainerStyle={styles.scroll}
       >
-        {/* Create New Notification Section */}
-        {showComposeSection ? (
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Create New Notification</ThemedText>
+        {showComposeSection && (
+          <View style={[styles.glassCard, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+            <ThemedText style={styles.cardTitle}>New Announcement</ThemedText>
+            
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Announcement Title"
+              placeholderTextColor="#94a3b8"
+              style={[styles.input, { color: textColor, borderColor: isDark ? '#334155' : '#e2e8f0' }]}
+            />
+            
+            <TextInput
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Detailed message..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              numberOfLines={4}
+              style={[styles.input, styles.textArea, { color: textColor, borderColor: isDark ? '#334155' : '#e2e8f0' }]}
+            />
 
-            {/* Title Input */}
-            <View
-              style={[
-                styles.input,
-                {
-                  borderColor: tintColor,
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              <ThemedText style={styles.inputLabel}>Title</ThemedText>
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Enter notification title"
-                style={{ color: textColor }}
-                placeholderTextColor={textColor + '99'}
-              />
+            <View style={styles.attachmentRow}>
+              <TouchableOpacity style={[styles.attachmentBtn, { borderColor: tintColor }]} onPress={pickDocument}>
+                <Ionicons name="attach" size={20} color={tintColor} />
+                <ThemedText style={{ color: tintColor, fontWeight: '600' }}>
+                  {attachment && !attachment.canceled ? 'File Attached' : 'Add Attachment'}
+                </ThemedText>
+              </TouchableOpacity>
+              {attachment && !attachment.canceled && (
+                <TouchableOpacity onPress={() => setAttachment(null)}>
+                  <Ionicons name="close-circle" size={24} color="#ef4444" />
+                </TouchableOpacity>
+              )}
             </View>
 
-            {/* Message Input */}
-            <View
-              style={[
-                styles.input,
-                styles.messageInput,
-                {
-                  borderColor: tintColor,
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              <ThemedText style={styles.inputLabel}>Message</ThemedText>
-              <TextInput
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Enter notification message"
-                multiline
-                numberOfLines={4}
-                style={{ color: textColor }}
-                placeholderTextColor={textColor + '99'}
-              />
-            </View>
-
-            {/* Select Target Audiences */}
-            <ThemedText style={styles.subTitle}>Select Target Audience</ThemedText>
-
-            {/* Role Selection */}
-            <View style={styles.chipContainer}>
-              {['STUDENT', 'TEACHER'].map((role) => (
+            <ThemedText style={styles.label}>Broadcast To:</ThemedText>
+            <View style={styles.chipRow}>
+              {['STUDENT', 'TEACHER'].map(r => (
                 <TouchableOpacity
-                  key={role}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: targetRoles.includes(role)
-                        ? tintColor
-                        : tintColor + '22',
-                      borderColor: tintColor,
-                    },
-                  ]}
-                  onPress={() => handleToggleRole(role)}
+                  key={r}
+                  onPress={() => setTargetRoles(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])}
+                  style={[styles.chip, targetRoles.includes(r) && { backgroundColor: tintColor, borderColor: tintColor }]}
                 >
-                  <ThemedText
-                    style={[
-                      styles.chipText,
-                      {
-                        color: targetRoles.includes(role) ? '#fff' : textColor,
-                      },
-                    ]}
-                  >
-                    {role}
-                  </ThemedText>
+                  <ThemedText style={[styles.chipText, targetRoles.includes(r) && { color: '#fff' }]}>{r}</ThemedText>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Class Selection (if STUDENT is selected) */}
-            {targetRoles.includes('STUDENT') && allClasses.length > 0 && (
-              <View style={styles.filterSection}>
-                <ThemedText style={styles.filterLabel}>Select Classes/Grades</ThemedText>
-                <View style={styles.chipContainer}>
-                  {allClasses.map((cls) => (
+            {targetRoles.includes('STUDENT') && (
+              <>
+                <ThemedText style={styles.label}>Select Classes:</ThemedText>
+                <View style={styles.chipRow}>
+                  {allClasses.map(c => (
                     <TouchableOpacity
-                      key={cls._id}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: selectedClasses.includes(cls._id)
-                            ? tintColor
-                            : tintColor + '22',
-                          borderColor: tintColor,
-                        },
-                      ]}
-                      onPress={() => handleToggleClass(cls._id)}
+                      key={c._id}
+                      onPress={() => setSelectedClasses(prev => prev.includes(c._id) ? prev.filter(x => x !== c._id) : [...prev, c._id])}
+                      style={[styles.chip, selectedClasses.includes(c._id) && { backgroundColor: tintColor, borderColor: tintColor }]}
                     >
-                      <ThemedText
-                        style={[
-                          styles.chipText,
-                          {
-                            color: selectedClasses.includes(cls._id)
-                              ? '#fff'
-                              : textColor,
-                          },
-                        ]}
-                      >
-                        {cls.name}
-                      </ThemedText>
+                      <ThemedText style={[styles.chipText, selectedClasses.includes(c._id) && { color: '#fff' }]}>{c.name}</ThemedText>
                     </TouchableOpacity>
                   ))}
                 </View>
-              </View>
-            )}
-
-            {/* Subject Selection (if STUDENT is selected) */}
-            {targetRoles.includes('STUDENT') && allSubjects.length > 0 && (
-              <View style={styles.filterSection}>
-                <ThemedText style={styles.filterLabel}>Select Subjects</ThemedText>
-                <View style={styles.chipContainer}>
-                  {allSubjects.map((subj) => (
+                
+                <ThemedText style={styles.label}>Target Subjects:</ThemedText>
+                <View style={styles.chipRow}>
+                  {allSubjects.map(s => (
                     <TouchableOpacity
-                      key={subj._id}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: selectedSubjects.includes(subj._id)
-                            ? tintColor
-                            : tintColor + '22',
-                          borderColor: tintColor,
-                        },
-                      ]}
-                      onPress={() => handleToggleSubject(subj._id)}
+                      key={s._id}
+                      onPress={() => setSelectedSubjects(prev => prev.includes(s._id) ? prev.filter(x => x !== s._id) : [...prev, s._id])}
+                      style={[styles.chip, selectedSubjects.includes(s._id) && { backgroundColor: tintColor, borderColor: tintColor }]}
                     >
-                      <ThemedText
-                        style={[
-                          styles.chipText,
-                          {
-                            color: selectedSubjects.includes(subj._id)
-                              ? '#fff'
-                              : textColor,
-                          },
-                        ]}
-                      >
-                        {subj.name}
-                      </ThemedText>
+                      <ThemedText style={[styles.chipText, selectedSubjects.includes(s._id) && { color: '#fff' }]}>{s.name}</ThemedText>
                     </TouchableOpacity>
                   ))}
                 </View>
-              </View>
+              </>
             )}
 
-            {/* Send Button */}
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: tintColor }]}
+              style={[styles.sendBtn, { backgroundColor: tintColor }]}
               onPress={handleSendNotification}
               disabled={sending}
             >
-              {sending ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <ThemedText style={styles.buttonText}>Send Notification</ThemedText>
-              )}
+              {sending ? <ActivityIndicator color="#fff" /> : <ThemedText style={styles.sendBtnText}>Send Announcement</ThemedText>}
             </TouchableOpacity>
           </View>
-        ) : null}
+        )}
 
-        {/* Sent Notifications List */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            {mode === 'manage'
-              ? `Manage Alerts (${sentNotifications.length})`
-              : `Sent Notifications (${sentNotifications.length})`}
-          </ThemedText>
-
-          {sentNotifications.length === 0 ? (
-            <ThemedText style={styles.emptyState}>No notifications sent yet</ThemedText>
-          ) : (
-            <FlatList
-              scrollEnabled={false}
-              data={sentNotifications}
-              keyExtractor={(item) => item._id}
-              renderItem={({ item }) => (
-                <View style={styles.notificationCard}>
-                  <View style={styles.notificationHeader}>
-                    <View style={styles.notificationTitleSection}>
-                      <ThemedText style={styles.notificationTitle}>
-                        {item.title}
-                      </ThemedText>
-                      <ThemedText style={styles.notificationDate}>
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.notificationActions}>
-                      <TouchableOpacity
-                        onPress={() => handleEditNotification(item)}
-                        style={[styles.iconButton, { backgroundColor: tintColor + '33' }]}
-                      >
-                        <ThemedText style={{ color: tintColor }}>✎</ThemedText>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteNotification(item._id)}
-                        style={[styles.iconButton, { backgroundColor: '#ff000033' }]}
-                      >
-                        <ThemedText style={{ color: '#ff0000' }}>✕</ThemedText>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <ThemedText style={styles.notificationMessage}>
-                    {item.message}
-                  </ThemedText>
-
-                  <View style={styles.targetInfo}>
-                    {item.roles.length > 0 && (
-                      <ThemedText style={styles.targetTag}>
-                        Roles: {item.roles.join(', ')}
-                      </ThemedText>
-                    )}
-                    {item.classes.length > 0 && (
-                      <ThemedText style={styles.targetTag}>
-                        Classes: {item.classes.join(', ')}
-                      </ThemedText>
-                    )}
-                  </View>
+        <ThemedText style={styles.sectionHeader}>Recently Sent</ThemedText>
+        {sentNotifications.map(item => (
+          <View key={item._id} style={[styles.historyCard, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+            <View style={styles.historyHeader}>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={styles.historyTitle}>{item.title}</ThemedText>
+                <ThemedText style={styles.historyDate}>{new Date(item.createdAt).toLocaleDateString()}</ThemedText>
+              </View>
+              <View style={styles.actionRow}>
+                <TouchableOpacity onPress={() => { setEditingId(item._id); setEditTitle(item.title); setEditMessage(item.message); setShowEditModal(true); }}>
+                  <Ionicons name="create-outline" size={22} color={tintColor} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item._id)}>
+                  <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <ThemedText style={styles.historyMsg} numberOfLines={2}>{item.message}</ThemedText>
+            <View style={styles.tagRow}>
+              {(item.roles || []).map((r, idx) => r ? (
+                <View key={`role-${idx}`} style={styles.tag}>
+                  <Text style={styles.tagText}>{String(r)}</Text>
                 </View>
-              )}
-            />
-          )}
-        </View>
+              ) : null)}
+              {(item.classes || []).map((c, idx) => c ? (
+                <View key={`class-${idx}`} style={[styles.tag, { backgroundColor: '#e0f2fe' }]}>
+                  <Text style={[styles.tagText, { color: '#0369a1' }]}>{String(c)}</Text>
+                </View>
+              ) : null)}
+              {item.fileName ? (
+                <View style={[styles.tag, { backgroundColor: '#dcfce7' }]}>
+                  <Text style={[styles.tagText, { color: '#166534' }]}>📎 File</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal visible={showEditModal} transparent animationType="fade">
+      <Modal visible={showEditModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor }]}>
-            <ThemedText style={styles.modalTitle}>Edit Notification</ThemedText>
-
-            <View style={[styles.input, { borderColor: tintColor, borderWidth: 1 }]}>
-              <ThemedText style={styles.inputLabel}>Title</ThemedText>
-              <TextInput
-                value={editTitle}
-                onChangeText={setEditTitle}
-                placeholder="Enter title"
-                style={{ color: textColor }}
-                placeholderTextColor={textColor + '99'}
-              />
-            </View>
-
-            <View
-              style={[
-                styles.input,
-                styles.messageInput,
-                { borderColor: tintColor, borderWidth: 1 },
-              ]}
-            >
-              <ThemedText style={styles.inputLabel}>Message</ThemedText>
-              <TextInput
-                value={editMessage}
-                onChangeText={setEditMessage}
-                placeholder="Enter message"
-                multiline
-                numberOfLines={4}
-                style={{ color: textColor }}
-                placeholderTextColor={textColor + '99'}
-              />
-            </View>
-
+            <ThemedText style={styles.modalTitle}>Edit Announcement</ThemedText>
+            <TextInput value={editTitle} onChangeText={setEditTitle} style={[styles.input, { color: textColor }]} />
+            <TextInput value={editMessage} onChangeText={setEditMessage} multiline style={[styles.input, styles.textArea, { color: textColor }]} />
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, { flex: 1, backgroundColor: tintColor + '33' }]}
-                onPress={() => setShowEditModal(false)}
-              >
-                <ThemedText style={{ color: tintColor }}>Cancel</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, { flex: 1, backgroundColor: tintColor, marginLeft: 8 }]}
-                onPress={handleUpdateNotification}
-              >
-                <ThemedText style={styles.buttonText}>Update</ThemedText>
-              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowEditModal(false)}><Text style={{ color: '#64748b' }}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.updateBtn, { backgroundColor: tintColor }]} onPress={handleUpdateNotification}><Text style={{ color: '#fff' }}>Update</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -568,171 +371,73 @@ const ManageNotificationsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scroll: { padding: 20 },
+  glassCard: {
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 30,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-  },
-  section: {
-    marginBottom: 24,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#1f2937',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  subTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 12,
-    marginBottom: 8,
-  },
+  cardTitle: { fontSize: 22, fontWeight: '800', marginBottom: 20 },
   input: {
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  messageInput: {
-    minHeight: 120,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-    gap: 8,
-  },
-  chip: {
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  filterSection: {
-    marginBottom: 12,
-  },
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  button: {
-    paddingVertical: 12,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  notificationCard: {
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#edf0f5',
-    backgroundColor: '#ffffff',
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  notificationTitleSection: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  notificationDate: {
-    fontSize: 11,
-    marginTop: 4,
-    opacity: 0.6,
-  },
-  notificationActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationMessage: {
-    fontSize: 13,
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  targetInfo: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  targetTag: {
-    fontSize: 11,
-    marginBottom: 4,
-    fontWeight: '500',
-    opacity: 0.7,
-  },
-  emptyState: {
-    textAlign: 'center',
-    marginVertical: 20,
-    opacity: 0.6,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+    fontSize: 16,
   },
-  modalContent: {
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  attachmentRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
+  attachmentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 12, marginTop: 4 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  chipText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  sendBtn: { borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 10 },
+  sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  sectionHeader: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  historyCard: {
     borderRadius: 20,
     padding: 20,
-    maxHeight: '80%',
-    borderWidth: 1,
-    borderColor: '#edf0f5',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#edf2f7',
   },
-  modalButtons: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  historyTitle: { fontSize: 16, fontWeight: '700' },
+  historyDate: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  actionRow: { flexDirection: 'row', gap: 16 },
+  historyMsg: { fontSize: 14, color: '#475569', marginBottom: 12 },
+  tagRow: { flexDirection: 'row', gap: 8 },
+  tag: { backgroundColor: '#f1f5f9', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8 },
+  tagText: { fontSize: 11, fontWeight: '600', color: '#475569' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
+  modalContent: { borderRadius: 24, padding: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '800', marginBottom: 20 },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#f1f5f9' },
+  updateBtn: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
 });
 
 export default ManageNotificationsScreen;
+

@@ -186,21 +186,49 @@ const createManualNotificationWithClassesAndSubjects = async ({
   let createdCount = 0;
 
   for (const role of roles) {
-    if (role === 'STUDENT' && Array.isArray(selectedClassIds) && selectedClassIds.length > 0 && Array.isArray(selectedSubjectIds) && selectedSubjectIds.length > 0) {
-      const created = await createNotificationForStudentsInClassesAndSubjects({
-        classIds: selectedClassIds,
-        subjectIds: selectedSubjectIds,
-        title,
-        message,
-        type: 'MANUAL',
-        createdBy: author,
-        broadcastKey,
-        fileMeta,
-      });
-      createdCount += created.length;
+    if (role === 'STUDENT') {
+      const hasClasses = Array.isArray(selectedClassIds) && selectedClassIds.length > 0;
+      const hasSubjects = Array.isArray(selectedSubjectIds) && selectedSubjectIds.length > 0;
+
+      if (hasClasses && hasSubjects) {
+        const created = await createNotificationForStudentsInClassesAndSubjects({
+          classIds: selectedClassIds,
+          subjectIds: selectedSubjectIds,
+          title,
+          message,
+          type: 'MANUAL',
+          createdBy: author,
+          broadcastKey,
+          fileMeta,
+        });
+        createdCount += created.length;
+      } else if (hasClasses) {
+        const created = await createNotificationForStudentsInClasses({
+          classIds: selectedClassIds,
+          title,
+          message,
+          type: 'MANUAL',
+          createdBy: author,
+          broadcastKey,
+          fileMeta,
+        });
+        createdCount += created.length;
+      } else {
+        const created = await createNotificationForRole({
+          role,
+          title,
+          message,
+          type: 'MANUAL',
+          createdBy: author,
+          broadcastKey,
+          fileMeta,
+        });
+        createdCount += created.length;
+      }
       continue;
     }
 
+    // For other roles (TEACHER, ADMIN), just send to role
     const created = await createNotificationForRole({
       role,
       title,
