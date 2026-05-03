@@ -361,11 +361,15 @@ const downloadExam = async (req, res) => {
     
     if (!fs.existsSync(filePath)) {
       console.log('Exam download: File does not exist at', filePath);
-      return res.status(404).json({ message: 'Exam file not found on server' });
+      return res.status(404).json({ message: 'File not found on server' });
     }
 
     const subjectName = exam.subject?.name || 'subject';
-    res.download(filePath, `exam_${exam._id}_${subjectName}.pdf`);
+    res.download(filePath, `exam_${exam._id}_${subjectName}.pdf`, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ message: 'File not found on server' });
+      }
+    });
   } catch (error) {
     console.error('Exam download error:', error);
     res.status(500).json({ message: error.message });
@@ -441,10 +445,14 @@ const downloadAnswerSheet = async (req, res) => {
     
     if (!fs.existsSync(filePath)) {
       console.log('Answer sheet download: File does not exist at', filePath);
-      return res.status(404).json({ message: 'Answer sheet file not found on server' });
+      return res.status(404).json({ message: 'File not found on server' });
     }
 
-    res.download(filePath, `answer_${answerSheet._id}_${answerSheet.student?.name || 'student'}.pdf`);
+    res.download(filePath, `answer_${answerSheet._id}_${answerSheet.student?.name || 'student'}.pdf`, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ message: 'File not found on server' });
+      }
+    });
   } catch (error) {
     console.error('Answer sheet download error:', error);
     res.status(500).json({ message: error.message });

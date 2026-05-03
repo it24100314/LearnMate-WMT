@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 // Load env vars
 dotenv.config();
@@ -130,6 +132,26 @@ const seedDatabase = async () => {
     ]);
     console.log(`✓ ${timetableExamples.length} Timetable entries created`);
 
+    // 4.5 Setup uploads directories and dummy files
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const dirsToCreate = ['exams', 'answer-sheets', 'submissions'];
+    
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir);
+    }
+    
+    for (const dir of dirsToCreate) {
+      const dirPath = path.join(uploadsDir, dir);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      const dummyFilePath = path.join(dirPath, 'dummy.txt');
+      if (!fs.existsSync(dummyFilePath)) {
+        fs.writeFileSync(dummyFilePath, 'This is a valid dummy file for testing.');
+      }
+    }
+    console.log('✓ Uploads directories and dummy files verified');
+
     // 5. Create sample Exams
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
@@ -141,7 +163,8 @@ const seedDatabase = async () => {
       schoolClass: classes[4]._id,
       deadline: futureDate,
       passMark: 40,
-      maxMarks: 100
+      maxMarks: 100,
+      filePath: 'dummy.txt'
     });
     console.log('✓ Sample Exam created');
 

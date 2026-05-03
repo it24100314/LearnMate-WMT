@@ -52,7 +52,23 @@ export const downloadAndShareApiFile = async ({ endpoint, fileName, dialogTitle 
   console.log('Download result:', result);
 
   if (!result || (result.status && result.status >= 400)) {
-    const errMsg = `Download failed with status ${result?.status ?? 'unknown'}`;
+    let errMsg = `Download failed with status ${result?.status ?? 'unknown'}`;
+    if (result?.status === 404) {
+      errMsg = 'File not available';
+    } else {
+      try {
+        if (result?.uri) {
+          const content = await FileSystem.readAsStringAsync(result.uri);
+          const json = JSON.parse(content);
+          if (json.message) errMsg = json.message;
+        }
+      } catch (e) {}
+    }
+    
+    if (result?.uri) {
+      try { await FileSystem.deleteAsync(result.uri, { idempotent: true }); } catch (e) {}
+    }
+    
     console.error(errMsg);
     throw new Error(errMsg);
   }
