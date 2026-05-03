@@ -4,22 +4,20 @@
   },
   "build": {
     "preview": {
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "preview2": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://learnmate-wmt.onrender.com/api"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://learnmate-wmt.onrender.com/api"
+      },
       "android": {
         "buildType": "apk"
       }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }
