@@ -51,22 +51,6 @@ export default function AdminResultsScreen() {
     fetchMarks();
   };
 
-  const getStatusColor = (status: string, marksObtained?: number, passMarks?: number) => {
-    if (status === 'Pending') return '#cbd5e1'; // Gray
-    if (marksObtained !== undefined && passMarks !== undefined) {
-      return marksObtained >= passMarks ? '#4caf50' : '#ef4444'; 
-    }
-    return '#3f51b5';
-  };
-
-  const getStatusText = (status: string, marksObtained?: number, passMarks?: number) => {
-    if (status === 'Pending') return 'Pending';
-    if (marksObtained !== undefined && passMarks !== undefined) {
-      return marksObtained >= passMarks ? 'Passed' : 'Failed';
-    }
-    return 'Graded';
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -87,21 +71,6 @@ export default function AdminResultsScreen() {
         </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statVal}>{marks.length}</Text>
-          <Text style={styles.statLabel}>Submissions</Text>
-        </View>
-        <View style={styles.statBoxCenter}>
-          <Text style={styles.statVal}>{marks.filter(m => m.status === 'Graded').length}</Text>
-          <Text style={styles.statLabel}>Graded</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statVal}>{Math.round((marks.filter(m => m.marksObtained !== undefined && m.marksObtained >= examMeta.passMarks).length / Math.max(1, marks.length)) * 100)}%</Text>
-          <Text style={styles.statLabel}>Pass Rate</Text>
-        </View>
-      </View>
-
       <FlatList
         data={marks}
         keyExtractor={(item) => item._id}
@@ -114,8 +83,9 @@ export default function AdminResultsScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const statColor = getStatusColor(item.status, item.marksObtained, examMeta.passMarks);
-          const statText = getStatusText(item.status, item.marksObtained, examMeta.passMarks);
+          const isGraded = item.status === 'Graded';
+          const statColor = isGraded ? '#3f51b5' : '#cbd5e1';
+          const statText = isGraded ? `${item.marksObtained} / ${examMeta.maxMarks}` : 'PENDING';
 
           return (
             <View style={styles.card}>
@@ -129,14 +99,9 @@ export default function AdminResultsScreen() {
               </View>
 
               <View style={styles.scoreArea}>
-                <View style={[styles.statusBadge, { backgroundColor: statColor + '15' }]}>
+                <View style={[styles.statusBadge, { backgroundColor: isGraded ? '#e8edff' : '#f8f9fa' }]}>
                   <Text style={[styles.statusText, { color: statColor }]}>{statText}</Text>
                 </View>
-                {item.status === 'Graded' && (
-                  <Text style={styles.scoreText}>
-                    <Text style={styles.scoreHighlight}>{item.marksObtained}</Text> / {examMeta.maxMarks}
-                  </Text>
-                )}
               </View>
             </View>
           );
@@ -186,35 +151,6 @@ const styles = StyleSheet.create({
     color: '#3f51b5',
     fontWeight: '600',
     marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#3f51b5',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  statBox: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statBoxCenter: {
-    flex: 1,
-    alignItems: 'center',
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#5c6bc0',
-  },
-  statVal: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: '#dbe2ff',
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '600',
-    textTransform: 'uppercase',
   },
   listContent: {
     padding: 20,
@@ -274,16 +210,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',
-  },
-  scoreText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  scoreHighlight: {
-    fontSize: 16,
-    color: '#1f2937',
-    fontWeight: '800',
   },
   emptyWrap: {
     alignItems: 'center',
