@@ -1,18 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, StyleSheet, TouchableOpacity, ActivityIndicator, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
 
 export default function TeacherDashboard() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    verifyAuth();
+    import('../../utils/storage').then(({ storage }) => {
+      storage.getItem('userRole').then(r => setRole(r || ''));
+    });
   }, []);
+
+  useEffect(() => {
+    if (isFocused && role === 'TEACHER') {
+      verifyAuth();
+    }
+  }, [isFocused, role]);
+
+  if (role === 'ADMIN') return <Redirect href="/(tabs)/admin-dashboard" />;
+  if (role === 'STUDENT') return <Redirect href="/(tabs)/student-dashboard" />;
 
   const verifyAuth = async () => {
     try {

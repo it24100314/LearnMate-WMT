@@ -9,7 +9,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -18,6 +18,10 @@ export default function TabLayout() {
     };
     loadRole();
   }, []);
+
+  if (role === null) {
+    return null; // wait for role to load
+  }
 
   return (
     <Tabs
@@ -39,33 +43,33 @@ export default function TabLayout() {
           fontWeight: '600',
         },
       }}>
-      {role === 'STUDENT' && (
-        <Tabs.Screen
-          name="student-dashboard"
-          options={{
-            title: 'Student',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="books.vertical.fill" color={color} />,
-          }}
-        />
-      )}
-      {role === 'TEACHER' && (
-        <Tabs.Screen
-          name="teacher-dashboard"
-          options={{
-            title: 'Teacher',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="briefcase.fill" color={color} />,
-          }}
-        />
-      )}
-      {role === 'ADMIN' && (
-        <Tabs.Screen
-          name="admin-dashboard"
-          options={{
-            title: 'Admin',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="building.columns.fill" color={color} />,
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="student-dashboard"
+        options={{
+          title: 'Student',
+          href: role === 'STUDENT' ? '/(tabs)/student-dashboard' : null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="books.vertical.fill" color={color} />,
+        }}
+        redirect={role !== 'STUDENT'}
+      />
+      <Tabs.Screen
+        name="teacher-dashboard"
+        options={{
+          title: 'Teacher',
+          href: role === 'TEACHER' ? '/(tabs)/teacher-dashboard' : null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="briefcase.fill" color={color} />,
+        }}
+        redirect={role !== 'TEACHER'}
+      />
+      <Tabs.Screen
+        name="admin-dashboard"
+        options={{
+          title: 'Admin',
+          href: role === 'ADMIN' ? '/(tabs)/admin-dashboard' : null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="building.columns.fill" color={color} />,
+        }}
+        redirect={role !== 'ADMIN'}
+      />
       <Tabs.Screen
         name="profile"
         options={{

@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import { handleApiError } from '../../utils/auth';
-import { storage } from '../../utils/storage';
 
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const isFocused = useIsFocused();
+  const [role, setRole] = useState<string | null>(null);
 
   const [stats, setStats] = useState({
     examsCount: 0,
@@ -21,19 +21,23 @@ export default function StudentDashboard() {
   });
 
   useEffect(() => {
-    if (isFocused) {
+    api.get('/users/me').then(() => {}).catch(()=>{}); // silent
+    import('../../utils/storage').then(({ storage }) => {
+      storage.getItem('userRole').then(r => setRole(r || ''));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isFocused && role === 'STUDENT') {
       fetchData();
     }
-  }, [isFocused]);
+  }, [isFocused, role]);
+
+  if (role === 'ADMIN') return <Redirect href="/(tabs)/admin-dashboard" />;
+  if (role === 'TEACHER') return <Redirect href="/(tabs)/teacher-dashboard" />;
 
   const fetchData = async () => {
     try {
-      const role = await storage.getItem('userRole');
-      if (role !== 'STUDENT') {
-        setLoading(false);
-        return;
-      }
-      
       setError(null);
       const [examsRes, marksRes, notificationsRes, feesRes] = await Promise.all([
         api.get('/exams/list'),

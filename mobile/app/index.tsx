@@ -30,10 +30,6 @@ export default function LoginScreen() {
         await storage.setItem('userRole', response.data.role);
         await storage.setItem('userId', response.data._id);
 
-        try {
-          if (router.dismissAll) router.dismissAll();
-        } catch(e) {}
-
         if (response.data.role === 'STUDENT') {
           router.replace('/(tabs)/student-dashboard');
         } else if (response.data.role === 'TEACHER') {
